@@ -8,3 +8,6 @@ target/*
 *.DS_STORE
 bin
 bin/*
+.classpath
+.project
+gradlew
