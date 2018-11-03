@@ -32,7 +32,10 @@ task debug(type:JavaExec) {
 } 
 
 dependencies {
-	// https://mvnrepository.com/artifact/net.sourceforge.htmlunit/htmlunit
+	// jsoup HTML parser library @ https://jsoup.org/
+	compile 'org.jsoup:jsoup:1.11.3'
+
+        // https://mvnrepository.com/artifact/net.sourceforge.htmlunit/htmlunit
 	compile group: 'net.sourceforge.htmlunit', name: 'htmlunit', version: '2.31'
 
 	// https://mvnrepository.com/artifact/junit/junit

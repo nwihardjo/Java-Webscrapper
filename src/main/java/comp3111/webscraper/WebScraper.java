@@ -9,6 +9,13 @@ import com.gargoylesoftware.htmlunit.html.HtmlElement;
 import com.gargoylesoftware.htmlunit.html.HtmlPage;
 import java.util.Vector;
 
+import org.jsoup.Jsoup;
+import org.jsoup.helper.Validate;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
+import java.io.IOException;
+
 
 /**
  * WebScraper provide a sample code that scrape web content. After it is constructed, you can call the method scrape with a keyword, 
@@ -69,6 +76,8 @@ public class WebScraper {
 	private static final String DEFAULT_URL = "https://newyork.craigslist.org/";
 	private WebClient client;
 
+	private static final String ADDITIONAL_URL = "https://www.amazon.com";
+	
 	/**
 	 * Default Constructor 
 	 */
@@ -86,10 +95,32 @@ public class WebScraper {
 	 */
 	public List<Item> scrape(String keyword) {
 		try {
+//			TODO: delete this following code later
+			System.out.println("\t DEBUG: scraping craigslist");
+			System.out.println("\t DEBUG: scraping amazon");
+		    
+			Document doc = Jsoup.connect(ADDITIONAL_URL+"/s/ref=nb_sb_noss_2?url=search-alias%3Daps&field-keywords=" + URLEncoder.encode(keyword,"UTF-8")).get();
+			System.out.println("DEBUG: " + doc.title());    			
+			Elements items_ = doc.select("//*[@id='s-results-list-atf']");
+			for (Element item_ : items_) {
+				System.out.println("DEBUG: " + item_.text());
+			}
+			Elements ress_ = doc.getElementsById("s-results-list-atf");
+			for (Element res_ : ress_) {
+				System.out.println("DEBUG: " + res_.text());
+			}
+			//*[@id="result_0"]
+//			Elements amazon_res = doc.getElementsByClass("s-result-item");
+//			for (Element res : amazon_res) {
+//				System.out.println("DEBUG: " + res.text());
+//			}
+			
+			
+//			TODO: end of deletion line
+			
 			String searchUrl = DEFAULT_URL + "search/sss?sort=rel&query=" + URLEncoder.encode(keyword, "UTF-8");
 			HtmlPage page = client.getPage(searchUrl);
 
-			
 			List<?> items = (List<?>) page.getByXPath("//li[@class='result-row']");
 			
 			Vector<Item> result = new Vector<Item>();
