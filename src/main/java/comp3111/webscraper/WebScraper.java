@@ -9,14 +9,6 @@ import com.gargoylesoftware.htmlunit.html.HtmlElement;
 import com.gargoylesoftware.htmlunit.html.HtmlPage;
 import java.util.Vector;
 
-import org.jsoup.Jsoup;
-import org.jsoup.helper.Validate;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
-import java.io.IOException;
-
-
 /**
  * WebScraper provide a sample code that scrape web content. After it is constructed, you can call the method scrape with a keyword, 
  * the client will go to the default url and parse the page by looking at the HTML DOM.  
@@ -74,10 +66,9 @@ import java.io.IOException;
 public class WebScraper {
 
 	private static final String DEFAULT_URL = "https://newyork.craigslist.org/";
+	private static final String AMAZON_URL = "https://www.amazon.com";
 	private WebClient client;
 
-	private static final String ADDITIONAL_URL = "https://www.amazon.com";
-	
 	/**
 	 * Default Constructor 
 	 */
@@ -85,6 +76,7 @@ public class WebScraper {
 		client = new WebClient();
 		client.getOptions().setCssEnabled(false);
 		client.getOptions().setJavaScriptEnabled(false);
+		client.waitForBackgroundJavaScript(100000);
 	}
 
 	/**
@@ -96,26 +88,46 @@ public class WebScraper {
 	public List<Item> scrape(String keyword) {
 		try {
 //			TODO: delete this following code later
-			System.out.println("\t DEBUG: scraping craigslist");
-			System.out.println("\t DEBUG: scraping amazon");
+			System.out.println("   DEBUG: scraping amazon...");
 		    
-			Document doc = Jsoup.connect(ADDITIONAL_URL+"/s/ref=nb_sb_noss_2?url=search-alias%3Daps&field-keywords=" + URLEncoder.encode(keyword,"UTF-8")).get();
-			System.out.println("DEBUG: " + doc.title());    			
-			Elements items_ = doc.select("//*[@id='s-results-list-atf']");
-			for (Element item_ : items_) {
-				System.out.println("DEBUG: " + item_.text());
-			}
-			Elements ress_ = doc.getElementsById("s-results-list-atf");
-			for (Element res_ : ress_) {
-				System.out.println("DEBUG: " + res_.text());
-			}
-			//*[@id="result_0"]
-//			Elements amazon_res = doc.getElementsByClass("s-result-item");
-//			for (Element res : amazon_res) {
-//				System.out.println("DEBUG: " + res.text());
-//			}
+			// Fetch data and query the website
+			String amazonUrl = AMAZON_URL+"/s/ref=nb_sb_noss?url=search-alias%3Daps&field-keywords=" + URLEncoder.encode(keyword,"UTF-8");
+			HtmlPage amazonPage = client.getPage(amazonUrl);
+			List<?> amazonResult = (List<?>) amazonPage.getByXPath("//*[starts-with(@id, 'result_')]");
 			
-			
+			System.out.println("\t DEBUG: [amazon] produce " + amazonResult.size() + " items");			
+			for (int i = 0; i < amazonResult.size(); i++) {
+				HtmlElement amazonItem = (HtmlElement) amazonResult.get(i);
+				
+				// item title retrieval, sponsored items cause complication in the xpath address
+				HtmlElement itemTitle;
+				try { 
+					// sponsored item case
+					itemTitle = (HtmlElement) amazonItem.getFirstByXPath("./div/div[4]/div[1]/a/h2"); 
+					System.out.println("\t DEBUG: item " + i + " title (sponsored) : " + itemTitle.asText());
+				} catch(Exception e) {
+					System.out.println("\t DEBUG: item " + i + " is not sponsored item");
+					try {
+						// normal case
+						itemTitle = (HtmlElement) amazonItem.getFirstByXPath("./div/div[3]/div[1]/a/h2");
+						System.out.println("\t DEBUG: item " + i + " title : " + itemTitle.asText());
+					} catch (Exception e_) {
+						// non-item case
+						String alert_ = ((HtmlElement)amazonItem.getFirstByXPath("./div/div/h3")).asText();
+						System.out.println("\t DEBUG: NON-ITEM ALERT!!! Item " + i + " is not an item check" + alert_);
+						continue;
+					}
+				}
+				System.out.println("\t DEBUG: item " + i + " 's title passed");
+				Item item = new Item();
+				item.setTitle(itemTitle.asText());
+				item.setPortal(AMAZON_URL);
+					
+				System.out.println("\t DEBUG: [amazon] item " + i + ": " + item.getTitle());
+			}
+//			/html/body/div[1]/div[1]/div/div[3]/div[2]/div/div[4]/div[1]/div[1]/ul/li[5]/div/div[3]/div[1]/a/h2
+//			/html/body/div[1]/div[1]/div/div[3]/div[2]/div/div[4]/div[1]/div[1]/ul/li[1]/div/div[4]/div[1]/a/h2
+			System.out.println("   DEBUG: scraping craigslist...");
 //			TODO: end of deletion line
 			
 			String searchUrl = DEFAULT_URL + "search/sss?sort=rel&query=" + URLEncoder.encode(keyword, "UTF-8");
@@ -137,7 +149,7 @@ public class WebScraper {
 				Item item = new Item();
 				item.setTitle(itemAnchor.asText());
 				item.setUrl(DEFAULT_URL + itemAnchor.getHrefAttribute());
-
+				item.setPortal(DEFAULT_URL);
 				item.setPrice(new Double(itemPrice.replace("$", "")));
 
 				result.add(item);

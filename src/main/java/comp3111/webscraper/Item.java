@@ -6,6 +6,7 @@ public class Item {
 	private String title ; 
 	private double price ;
 	private String url ;
+	private String portal ;
 	
 	public String getTitle() {
 		return title;
@@ -25,6 +26,10 @@ public class Item {
 	public void setUrl(String url) {
 		this.url = url;
 	}
-	
-
+	public String getPortal() {
+		return portal;
+	}
+	public void setPortal(String portal) {
+		this.portal = portal;
+	}
 }	
