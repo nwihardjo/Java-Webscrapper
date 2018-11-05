@@ -1,8 +1,9 @@
 package comp3111.webscraper;
 
+import java.util.Arrays;
 
 
-public class Item {
+public class Item implements Comparable <Item> {
 	private String title ; 
 	// price in HKD
 	private double price ;
@@ -32,5 +33,9 @@ public class Item {
 	}
 	public void setPortal(String portal) {
 		this.portal = portal;
+	}
+	public int compareTo (Item item) {
+		// returns -1 if first argument is smaller, 0 if equal, 1 if larger
+		return Double.compare(this.price, item.getPrice());
 	}
 }	

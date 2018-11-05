@@ -4,6 +4,8 @@ import java.io.File;
 import java.io.FileWriter;
 import java.net.URLEncoder;
 import java.util.List;
+import java.util.ArrayList;
+import java.util.Collections;
 
 import com.gargoylesoftware.htmlunit.WebClient;
 import com.gargoylesoftware.htmlunit.WebResponse;
@@ -90,17 +92,17 @@ public class WebScraper {
 	 */
 	public List<Item> scrape(String keyword) {
 		try {
-//			TODO: delete this following code later
 			System.out.println("   DEBUG: scraping amazon...");
 		    
 			// Fetch data and query the website
 			String amazonUrl = AMAZON_URL+"s/ref=nb_sb_noss?url=search-alias%3Daps&field-keywords=" + URLEncoder.encode(keyword,"UTF-8");
 			HtmlPage amazonPage = client.getPage(amazonUrl);
 			List<?> amazonResult = (List<?>) amazonPage.getByXPath("//li[starts-with(@id, 'result_')]");
+			ArrayList<Item> amazonArrayList = new ArrayList<Item>();
 			
-			System.out.println("\t DEBUG: [amazon] produce " + amazonResult.size() + " items");			
-		
+			// System.out.println("\t DEBUG: [amazon] produce " + amazonResult.size() + " items");			
 			// Save html response for debugging purposes
+			// TODO: delete this block later
 			WebResponse response = amazonPage.getWebResponse();
 			String content = response.getContentAsString();
 			File debug = new File ("/home/asus/Documents/eclipse/Java-Webscrapper/amazon_scaped.html");
@@ -108,23 +110,19 @@ public class WebScraper {
 			FileWriter fw = new FileWriter(debug);
 			fw.write(content);
 			fw.close();
-			
+		
+			// item retrieval
 			for (int i = 0; i < amazonResult.size(); i++) {
 				HtmlElement amazonItem = (HtmlElement) amazonResult.get(i);
 				
 				// item title retrieval
-				
-				HtmlElement itemTitle;
-				try {
-					// item, normal case
-					itemTitle = (HtmlElement) amazonItem.getFirstByXPath(".//h2[@data-attribute]"); 
-					System.out.println("\t DEBUG: item " + i + " title : " + itemTitle.asText());
-				} catch (Exception e) {
-					// non-item case
+				HtmlElement itemTitle = (HtmlElement) amazonItem.getFirstByXPath(".//h2[@data-attribute]"); 
+				// non-item special case
+				if (itemTitle == null || itemTitle.asText() == "") {
 					String alert_ = ((HtmlElement)amazonItem.getFirstByXPath("./div/div/h3")).asText();
 					System.out.println("\t DEBUG: NON-ITEM ALERT!!! Item " + i + " is not an item. Check --> " + alert_);
 					continue;
-				}
+					}
 				
 				// item price retrieval
 				// TODO: check what to do on range price
@@ -132,29 +130,30 @@ public class WebScraper {
 				HtmlElement firstItemFractionalPrice = (HtmlElement) amazonItem.getFirstByXPath(".//*[contains(@class, 'sx-price-fractional')]");
 				String itemPrice = (firstItemWholePrice == null || firstItemFractionalPrice == null) ? "0.0" : firstItemWholePrice.asText()+"."+
 						firstItemFractionalPrice.asText();
-				System.out.println("\t DEBUG: item " + i + " price: USD " + itemPrice);
+				// System.out.println("\t DEBUG: item " + i + " price: USD " + itemPrice);
 				
 				// URL price retrieval
 				HtmlAnchor itemAnchor = (HtmlAnchor) amazonItem.getFirstByXPath(".//h2[@data-attribute]/parent::a");
 				String itemURL = itemAnchor.getHrefAttribute().startsWith(AMAZON_URL) ? itemAnchor.getHrefAttribute() : 
 					AMAZON_URL+itemAnchor.getHrefAttribute(); 
-				System.out.println("\t DEBUG: item " + i + " anchor: " + itemURL);
-											
+				// System.out.println("\t DEBUG: item " + i + " anchor: " + itemURL);
+							
+				// item instantiation
 				Item item = new Item();
 				item.setTitle(itemTitle.asText());
 				item.setPrice(new Double(itemPrice) * 7.8);
 				item.setPortal(AMAZON_URL);
 				item.setUrl(itemURL);
-				System.out.println("\t DEBUG: [amazon] stored item " + i + ": " + item.getTitle());
+				amazonArrayList.add(item);
+				// System.out.println("\t DEBUG: [amazon] stored item " + i + ": " + item.getPrice() + " HKD. Name: " +item.getTitle());
 			}
-
+			Collections.sort(amazonArrayList);
+			
 			System.out.println("   DEBUG: scraping craigslist...");
 			String searchUrl = DEFAULT_URL + "search/sss?sort=rel&query=" + URLEncoder.encode(keyword, "UTF-8");
 			HtmlPage page = client.getPage(searchUrl);
-
 			List<?> items = (List<?>) page.getByXPath("//li[@class='result-row']");
-			
-			Vector<Item> result = new Vector<Item>();
+			ArrayList<Item> craigsArrayList = new ArrayList<Item>();
 
 			for (int i = 0; i < items.size(); i++) {
 				HtmlElement htmlItem = (HtmlElement) items.get(i);	
@@ -170,9 +169,28 @@ public class WebScraper {
 				item.setUrl(DEFAULT_URL + itemAnchor.getHrefAttribute());
 				item.setPortal(DEFAULT_URL);
 				item.setPrice(new Double(itemPrice.replace("$", ""))*7.8);
-
-				result.add(item);
+				craigsArrayList.add(item);
 			}
+			Collections.sort(craigsArrayList);
+			
+			// append final result to be returned based on sorting
+			Vector<Item> result = new Vector<Item>();
+			for (int i=0, j=0; !amazonArrayList.isEmpty() && !craigsArrayList.isEmpty();) {
+				if (amazonArrayList.isEmpty()) 
+					result.add(craigsArrayList.remove(j));
+				else if (craigsArrayList.isEmpty()) 
+					result.add(amazonArrayList.remove(i));
+				else if (craigsArrayList.get(j).getPrice() > amazonArrayList.get(i).getPrice()) 
+					result.add(amazonArrayList.remove(i));
+				else if (craigsArrayList.get(j).getPrice() < amazonArrayList.get(i).getPrice()) 
+					result.add(craigsArrayList.remove(j));
+				else if (craigsArrayList.get(j).getPrice() == amazonArrayList.get(i).getPrice())
+					result.add(craigsArrayList.remove(j));
+			}
+			
+			// TODO: delete this line
+			for (Item i: result) System.out.println("DEBUG: result " + i.getPrice() + " PORTAL " + i.getPortal());
+			
 			client.close();
 			return result;
 		} catch (Exception e) {
