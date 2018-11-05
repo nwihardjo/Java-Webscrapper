@@ -1,9 +1,12 @@
 package comp3111.webscraper;
 
+import java.io.File;
+import java.io.FileWriter;
 import java.net.URLEncoder;
 import java.util.List;
 
 import com.gargoylesoftware.htmlunit.WebClient;
+import com.gargoylesoftware.htmlunit.WebResponse;
 import com.gargoylesoftware.htmlunit.html.HtmlAnchor;
 import com.gargoylesoftware.htmlunit.html.HtmlElement;
 import com.gargoylesoftware.htmlunit.html.HtmlPage;
@@ -66,7 +69,7 @@ import java.util.Vector;
 public class WebScraper {
 
 	private static final String DEFAULT_URL = "https://newyork.craigslist.org/";
-	private static final String AMAZON_URL = "https://www.amazon.com";
+	private static final String AMAZON_URL = "https://www.amazon.com/";
 	private WebClient client;
 
 	/**
@@ -91,45 +94,61 @@ public class WebScraper {
 			System.out.println("   DEBUG: scraping amazon...");
 		    
 			// Fetch data and query the website
-			String amazonUrl = AMAZON_URL+"/s/ref=nb_sb_noss?url=search-alias%3Daps&field-keywords=" + URLEncoder.encode(keyword,"UTF-8");
+			String amazonUrl = AMAZON_URL+"s/ref=nb_sb_noss?url=search-alias%3Daps&field-keywords=" + URLEncoder.encode(keyword,"UTF-8");
 			HtmlPage amazonPage = client.getPage(amazonUrl);
-			List<?> amazonResult = (List<?>) amazonPage.getByXPath("//*[starts-with(@id, 'result_')]");
+			List<?> amazonResult = (List<?>) amazonPage.getByXPath("//li[starts-with(@id, 'result_')]");
 			
 			System.out.println("\t DEBUG: [amazon] produce " + amazonResult.size() + " items");			
+		
+			// Save html response for debugging purposes
+			WebResponse response = amazonPage.getWebResponse();
+			String content = response.getContentAsString();
+			File debug = new File ("/home/asus/Documents/eclipse/Java-Webscrapper/amazon_scaped.html");
+			if (!debug.exists()) debug.createNewFile();
+			FileWriter fw = new FileWriter(debug);
+			fw.write(content);
+			fw.close();
+			
 			for (int i = 0; i < amazonResult.size(); i++) {
 				HtmlElement amazonItem = (HtmlElement) amazonResult.get(i);
 				
-				// item title retrieval, sponsored items cause complication in the xpath address
+				// item title retrieval
+				
 				HtmlElement itemTitle;
-				try { 
-					// sponsored item case
-					itemTitle = (HtmlElement) amazonItem.getFirstByXPath("./div/div[4]/div[1]/a/h2"); 
-					System.out.println("\t DEBUG: item " + i + " title (sponsored) : " + itemTitle.asText());
-				} catch(Exception e) {
-					System.out.println("\t DEBUG: item " + i + " is not sponsored item");
-					try {
-						// normal case
-						itemTitle = (HtmlElement) amazonItem.getFirstByXPath("./div/div[3]/div[1]/a/h2");
-						System.out.println("\t DEBUG: item " + i + " title : " + itemTitle.asText());
-					} catch (Exception e_) {
-						// non-item case
-						String alert_ = ((HtmlElement)amazonItem.getFirstByXPath("./div/div/h3")).asText();
-						System.out.println("\t DEBUG: NON-ITEM ALERT!!! Item " + i + " is not an item check" + alert_);
-						continue;
-					}
+				try {
+					// item, normal case
+					itemTitle = (HtmlElement) amazonItem.getFirstByXPath(".//h2[@data-attribute]"); 
+					System.out.println("\t DEBUG: item " + i + " title : " + itemTitle.asText());
+				} catch (Exception e) {
+					// non-item case
+					String alert_ = ((HtmlElement)amazonItem.getFirstByXPath("./div/div/h3")).asText();
+					System.out.println("\t DEBUG: NON-ITEM ALERT!!! Item " + i + " is not an item. Check --> " + alert_);
+					continue;
 				}
-				System.out.println("\t DEBUG: item " + i + " 's title passed");
+				
+				// item price retrieval
+				// TODO: check what to do on range price
+				HtmlElement firstItemWholePrice = (HtmlElement) amazonItem.getFirstByXPath(".//*[contains(@class, 'sx-price-whole')]");
+				HtmlElement firstItemFractionalPrice = (HtmlElement) amazonItem.getFirstByXPath(".//*[contains(@class, 'sx-price-fractional')]");
+				String itemPrice = (firstItemWholePrice == null || firstItemFractionalPrice == null) ? "0.0" : firstItemWholePrice.asText()+"."+
+						firstItemFractionalPrice.asText();
+				System.out.println("\t DEBUG: item " + i + " price: USD " + itemPrice);
+				
+				// URL price retrieval
+				HtmlAnchor itemAnchor = (HtmlAnchor) amazonItem.getFirstByXPath(".//h2[@data-attribute]/parent::a");
+				String itemURL = itemAnchor.getHrefAttribute().startsWith(AMAZON_URL) ? itemAnchor.getHrefAttribute() : 
+					AMAZON_URL+itemAnchor.getHrefAttribute(); 
+				System.out.println("\t DEBUG: item " + i + " anchor: " + itemURL);
+											
 				Item item = new Item();
 				item.setTitle(itemTitle.asText());
+				item.setPrice(new Double(itemPrice) * 7.8);
 				item.setPortal(AMAZON_URL);
-					
-				System.out.println("\t DEBUG: [amazon] item " + i + ": " + item.getTitle());
+				item.setUrl(itemURL);
+				System.out.println("\t DEBUG: [amazon] stored item " + i + ": " + item.getTitle());
 			}
-//			/html/body/div[1]/div[1]/div/div[3]/div[2]/div/div[4]/div[1]/div[1]/ul/li[5]/div/div[3]/div[1]/a/h2
-//			/html/body/div[1]/div[1]/div/div[3]/div[2]/div/div[4]/div[1]/div[1]/ul/li[1]/div/div[4]/div[1]/a/h2
+
 			System.out.println("   DEBUG: scraping craigslist...");
-//			TODO: end of deletion line
-			
 			String searchUrl = DEFAULT_URL + "search/sss?sort=rel&query=" + URLEncoder.encode(keyword, "UTF-8");
 			HtmlPage page = client.getPage(searchUrl);
 
@@ -138,7 +157,7 @@ public class WebScraper {
 			Vector<Item> result = new Vector<Item>();
 
 			for (int i = 0; i < items.size(); i++) {
-				HtmlElement htmlItem = (HtmlElement) items.get(i);
+				HtmlElement htmlItem = (HtmlElement) items.get(i);	
 				HtmlAnchor itemAnchor = ((HtmlAnchor) htmlItem.getFirstByXPath(".//p[@class='result-info']/a"));
 				HtmlElement spanPrice = ((HtmlElement) htmlItem.getFirstByXPath(".//a/span[@class='result-price']"));
 
@@ -150,7 +169,7 @@ public class WebScraper {
 				item.setTitle(itemAnchor.asText());
 				item.setUrl(DEFAULT_URL + itemAnchor.getHrefAttribute());
 				item.setPortal(DEFAULT_URL);
-				item.setPrice(new Double(itemPrice.replace("$", "")));
+				item.setPrice(new Double(itemPrice.replace("$", ""))*7.8);
 
 				result.add(item);
 			}

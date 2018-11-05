@@ -4,6 +4,7 @@ package comp3111.webscraper;
 
 public class Item {
 	private String title ; 
+	// price in HKD
 	private double price ;
 	private String url ;
 	private String portal ;
