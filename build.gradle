@@ -32,7 +32,10 @@ task debug(type:JavaExec) {
 } 
 
 dependencies {
-        // https://mvnrepository.com/artifact/net.sourceforge.htmlunit/htmlunit
+        // https://mvnrepository.com/artifact/org.apache.commons/commons-lang3
+	compile group: 'org.apache.commons', name: 'commons-lang3', version: '3.0'
+
+	// https://mvnrepository.com/artifact/net.sourceforge.htmlunit/htmlunit
 	compile group: 'net.sourceforge.htmlunit', name: 'htmlunit', version: '2.31'
 
 	// https://mvnrepository.com/artifact/junit/junit

@@ -110,6 +110,8 @@ public class WebScraper {
 			FileWriter fw = new FileWriter(debug);
 			fw.write(content);
 			fw.close();
+			// TODO: disable / delete line executed if and only if the DEBUG parameters were set false
+			final Boolean DEBUG = false;
 		
 			// item retrieval
 			for (int i = 0; i < amazonResult.size(); i++) {
@@ -120,7 +122,7 @@ public class WebScraper {
 				// non-item special case
 				if (itemTitle == null || itemTitle.asText() == "") {
 					String alert_ = ((HtmlElement)amazonItem.getFirstByXPath("./div/div/h3")).asText();
-					System.out.println("\t DEBUG: NON-ITEM ALERT!!! Item " + i + " is not an item. Check --> " + alert_);
+					if (DEBUG) System.out.println("\t DEBUG: NON-ITEM ALERT!!! Item " + i + " is not an item. Check --> " + alert_);
 					continue;
 					}
 				
@@ -130,13 +132,13 @@ public class WebScraper {
 				HtmlElement firstItemFractionalPrice = (HtmlElement) amazonItem.getFirstByXPath(".//*[contains(@class, 'sx-price-fractional')]");
 				String itemPrice = (firstItemWholePrice == null || firstItemFractionalPrice == null) ? "0.0" : firstItemWholePrice.asText()+"."+
 						firstItemFractionalPrice.asText();
-				// System.out.println("\t DEBUG: item " + i + " price: USD " + itemPrice);
+				if (DEBUG) System.out.println("\t DEBUG: item " + i + " price: USD " + itemPrice);
 				
 				// URL price retrieval
 				HtmlAnchor itemAnchor = (HtmlAnchor) amazonItem.getFirstByXPath(".//h2[@data-attribute]/parent::a");
 				String itemURL = itemAnchor.getHrefAttribute().startsWith(AMAZON_URL) ? itemAnchor.getHrefAttribute() : 
 					AMAZON_URL+itemAnchor.getHrefAttribute(); 
-				// System.out.println("\t DEBUG: item " + i + " anchor: " + itemURL);
+				if (DEBUG) System.out.println("\t DEBUG: item " + i + " anchor: " + itemURL);
 							
 				// item instantiation
 				Item item = new Item();
@@ -145,7 +147,7 @@ public class WebScraper {
 				item.setPortal(AMAZON_URL);
 				item.setUrl(itemURL);
 				amazonArrayList.add(item);
-				// System.out.println("\t DEBUG: [amazon] stored item " + i + ": " + item.getPrice() + " HKD. Name: " +item.getTitle());
+				if (DEBUG) System.out.println("\t DEBUG: [amazon] stored item " + i + ": " + item.getPrice() + " HKD. Name: " +item.getTitle());
 			}
 			Collections.sort(amazonArrayList);
 			
@@ -159,6 +161,10 @@ public class WebScraper {
 				HtmlElement htmlItem = (HtmlElement) items.get(i);	
 				HtmlAnchor itemAnchor = ((HtmlAnchor) htmlItem.getFirstByXPath(".//p[@class='result-info']/a"));
 				HtmlElement spanPrice = ((HtmlElement) htmlItem.getFirstByXPath(".//a/span[@class='result-price']"));
+				
+				// To fix bugs from the source code
+				String itemURL = itemAnchor.getHrefAttribute().startsWith(AMAZON_URL) ? itemAnchor.getHrefAttribute() : 
+					AMAZON_URL+itemAnchor.getHrefAttribute(); 
 
 				// It is possible that an item doesn't have any price, we set the price to 0.0
 				// in this case
@@ -166,7 +172,7 @@ public class WebScraper {
 
 				Item item = new Item();
 				item.setTitle(itemAnchor.asText());
-				item.setUrl(DEFAULT_URL + itemAnchor.getHrefAttribute());
+				item.setUrl(itemURL);
 				item.setPortal(DEFAULT_URL);
 				item.setPrice(new Double(itemPrice.replace("$", ""))*7.8);
 				craigsArrayList.add(item);
@@ -189,7 +195,7 @@ public class WebScraper {
 			}
 			
 			// TODO: delete this line
-			for (Item i: result) System.out.println("DEBUG: result " + i.getPrice() + " PORTAL " + i.getPortal());
+			if (DEBUG) for (Item i: result) System.out.println("DEBUG: result " + i.getPrice() + " PORTAL " + i.getPortal());
 			
 			client.close();
 			return result;
