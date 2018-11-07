@@ -100,19 +100,22 @@ public class WebScraper {
 			List<?> amazonResult = (List<?>) amazonPage.getByXPath("//li[starts-with(@id, 'result_')]");
 			ArrayList<Item> amazonArrayList = new ArrayList<Item>();
 			
+			// TODO: disable / delete line executed if and only if the DEBUG parameters were set false
+			final Boolean DEBUG = false;
+
 			// System.out.println("\t DEBUG: [amazon] produce " + amazonResult.size() + " items");			
 			// Save html response for debugging purposes
 			// TODO: delete this block later
-			WebResponse response = amazonPage.getWebResponse();
-			String content = response.getContentAsString();
-			File debug = new File ("/home/asus/Documents/eclipse/Java-Webscrapper/amazon_scaped.html");
-			if (!debug.exists()) debug.createNewFile();
-			FileWriter fw = new FileWriter(debug);
-			fw.write(content);
-			fw.close();
-			// TODO: disable / delete line executed if and only if the DEBUG parameters were set false
-			final Boolean DEBUG = false;
-		
+			if (DEBUG) {
+				WebResponse response = amazonPage.getWebResponse();
+				String content = response.getContentAsString();
+				File debug = new File ("/home/asus/Documents/eclipse/Java-Webscrapper/amazon_scaped.html");
+				if (!debug.exists()) debug.createNewFile();
+				FileWriter fw = new FileWriter(debug);
+				fw.write(content);
+				fw.close();
+			}
+					
 			// item retrieval
 			for (int i = 0; i < amazonResult.size(); i++) {
 				HtmlElement amazonItem = (HtmlElement) amazonResult.get(i);
