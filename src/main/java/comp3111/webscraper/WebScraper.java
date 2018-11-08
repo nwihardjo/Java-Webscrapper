@@ -2,6 +2,7 @@ package comp3111.webscraper;
 
 import java.io.File;
 import java.io.FileWriter;
+import java.io.IOException;
 import java.net.URLEncoder;
 import java.util.List;
 import java.util.ArrayList;
@@ -73,6 +74,7 @@ public class WebScraper {
 	private static final String DEFAULT_URL = "https://newyork.craigslist.org/";
 	private static final String AMAZON_URL = "https://www.amazon.com/";
 	private WebClient client;
+	private static final Boolean DEBUG = false;
 
 	/**
 	 * Default Constructor 
@@ -84,75 +86,120 @@ public class WebScraper {
 		client.waitForBackgroundJavaScript(100000);
 	}
 
+	private static String getTitle(HtmlElement item, String portal) {
+		if (DEBUG) System.out.println("\t DEBUG: entering getTitle method");
+		String xPathAddr = (portal == AMAZON_URL) ? ".//h2[@data-attribute]" : ".//p[@class='result-info']/a";
+		HtmlElement itemTitle = (HtmlElement) item.getFirstByXPath(xPathAddr);
+		
+		// USE:CASE non-item case, particularly on Amazon portal
+		if (itemTitle == null || itemTitle.asText() == "") {
+			if (DEBUG) System.out.println("\t DEBUG: NON-ITEM ALERT!!!!");
+			return null;
+		}
+		return itemTitle.asText();		
+	}
+
+	private static Double getPrice(HtmlElement item, String portal) {
+		if (DEBUG) System.out.println("\t DEBUG: entering getPrice method");
+		// return 0.0 if the price is not specified
+		if (portal == AMAZON_URL) {
+			// portal: amazon 
+			// USE CASE: only consider the main item, not the buying options
+			// USE CASE: only main price is used, not the offer with kindle, etc.
+			ArrayList<HtmlElement> ItemWholePrice = new ArrayList<HtmlElement> (item.getByXPath(".//*[contains(@class, 'sx-price-whole')]"));
+			ArrayList<HtmlElement> ItemFractionalPrice = new ArrayList<HtmlElement> (item.getByXPath(".//*[contains(@class, 'sx-price-fractional')]"));
+			
+			if (ItemWholePrice == null || ItemFractionalPrice == null || ItemWholePrice.size() == 0 || ItemFractionalPrice.size() == 0) {
+				HtmlElement offeredPrice = (HtmlElement) item.getFirstByXPath(".//*[contains(text(),'offer')]");
+				if (offeredPrice == null) 
+					return 0.0;
+				else {
+					// USE CASE: no price available, but there some offers which contain price
+					if (DEBUG) System.out.println("\t DEBUG: no price available, but there are offers at " + offeredPrice.asText());
+					return new Double(offeredPrice.asText().replaceAll("\\(.*\\)", "").replace("$", "").replaceAll(",", ""));
+				}
+			} else if (ItemWholePrice.size() > 1 || ItemFractionalPrice.size() > 1) {
+				Double lowPrice = new Double (ItemWholePrice.get(0).asText() + "." + ItemFractionalPrice.get(0).asText());
+				Double highPrice = new Double (ItemWholePrice.get(1).asText() + "." + ItemFractionalPrice.get(1).asText());
+				// USE CASE: return average price if the price given is a range
+				return (lowPrice + highPrice) / 2.0;
+			} else { 
+				if (DEBUG) System.out.println("\t DEBUG: GETPRICE FINAL " + ItemWholePrice.size() + " and " + ItemFractionalPrice.size());
+				return new Double (ItemWholePrice.get(0).asText() + "." + ItemFractionalPrice.get(0).asText()); }
+		} else {
+			// portal: craigslist
+			HtmlElement itemPrice = ((HtmlElement) item.getFirstByXPath(".//a/span[@class='result-price']"));
+			if (itemPrice == null) 
+				return 0.0;
+			else 
+				return new Double(itemPrice.asText().replace("$", ""));
+		}
+		}
+
+	private static String getUrl(HtmlElement item, String portal) {
+		if (DEBUG) System.out.println("\t DEBUG: entering getUrl method");
+		String portal_url = (portal == AMAZON_URL) ? AMAZON_URL : DEFAULT_URL;
+		String xPathAddr = (portal == AMAZON_URL) ? ".//h2[@data-attribute]/parent::a" : ".//p[@class='result-info']/a";
+		HtmlAnchor itemUrl = (HtmlAnchor) item.getFirstByXPath(xPathAddr);
+		if (itemUrl.getHrefAttribute().startsWith(portal_url)) 
+			return itemUrl.getHrefAttribute();
+		else 
+			return portal_url+itemUrl.getHrefAttribute();
+	}
+
+	private static Vector<Item> sortResult(ArrayList<Item> amazonArrayList, ArrayList<Item> craigsArrayList){
+		if (DEBUG) System.out.println("\t DEBUG: entering getTitle method");
+		Vector<Item> result = new Vector<Item>();
+		// sort ascending, for the same price, craigslist item goes first
+		for (int i=0, j=0; !amazonArrayList.isEmpty() && !craigsArrayList.isEmpty();) {
+			if (amazonArrayList.isEmpty()) 
+				result.add(craigsArrayList.remove(j));
+			else if (craigsArrayList.isEmpty()) 
+				result.add(amazonArrayList.remove(i));
+			else if (craigsArrayList.get(j).getPrice() > amazonArrayList.get(i).getPrice()) 
+				result.add(amazonArrayList.remove(i));
+			else if (craigsArrayList.get(j).getPrice() < amazonArrayList.get(i).getPrice()) 
+				result.add(craigsArrayList.remove(j));
+			else if (craigsArrayList.get(j).getPrice() == amazonArrayList.get(i).getPrice())
+				result.add(craigsArrayList.remove(j));
+		}
+		return result;
+	}
+	
+	
 	/**
 	 * The only method implemented in this class, to scrape web content from the craigslist
 	 * 
 	 * @param keyword - the keyword you want to search
 	 * @return A list of Item that has found. A zero size list is return if nothing is found. Null if any exception (e.g. no connectivity)
 	 */
-	public List<Item> scrape(String keyword) {
+	public 	List<Item> scrape(String keyword) {
 		try {
 			System.out.println("   DEBUG: scraping amazon...");
-		    
-			// Fetch data and query the website
+		    // Fetch data and query the website
 			String amazonUrl = AMAZON_URL+"s/ref=nb_sb_noss?url=search-alias%3Daps&field-keywords=" + URLEncoder.encode(keyword,"UTF-8");
 			HtmlPage amazonPage = client.getPage(amazonUrl);
 			List<?> amazonResult = (List<?>) amazonPage.getByXPath("//li[starts-with(@id, 'result_')]");
 			ArrayList<Item> amazonArrayList = new ArrayList<Item>();
 			
-			// TODO: disable / delete line executed if and only if the DEBUG parameters were set false
-			final Boolean DEBUG = false;
-
-			// System.out.println("\t DEBUG: [amazon] produce " + amazonResult.size() + " items");			
-			// Save html response for debugging purposes
-			// TODO: delete this block later
-			if (DEBUG) {
-				WebResponse response = amazonPage.getWebResponse();
-				String content = response.getContentAsString();
-				File debug = new File ("/home/asus/Documents/eclipse/Java-Webscrapper/amazon_scaped.html");
-				if (!debug.exists()) debug.createNewFile();
-				FileWriter fw = new FileWriter(debug);
-				fw.write(content);
-				fw.close();
-			}
+			if (DEBUG) System.out.println("\t DEBUG: [amazon] produce " + amazonResult.size() + " items");			
 					
 			// item retrieval
+			// USECASE: if the item is not a single search, i.e. "book", which return a whole sub-section, meaning no item found
 			for (int i = 0; i < amazonResult.size(); i++) {
 				HtmlElement amazonItem = (HtmlElement) amazonResult.get(i);
+
+				//non-item case
+				if (getTitle(amazonItem, AMAZON_URL) == null) continue;
+				if (DEBUG) System.out.println("\t DEBUG: entering item : " + getTitle(amazonItem, AMAZON_URL));
 				
-				// item title retrieval
-				HtmlElement itemTitle = (HtmlElement) amazonItem.getFirstByXPath(".//h2[@data-attribute]"); 
-				// non-item special case
-				if (itemTitle == null || itemTitle.asText() == "") {
-					String alert_ = ((HtmlElement)amazonItem.getFirstByXPath("./div/div/h3")).asText();
-					if (DEBUG) System.out.println("\t DEBUG: NON-ITEM ALERT!!! Item " + i + " is not an item. Check --> " + alert_);
-					continue;
-					}
-				
-				// item price retrieval
-				// TODO: check what to do on range price
-				HtmlElement firstItemWholePrice = (HtmlElement) amazonItem.getFirstByXPath(".//*[contains(@class, 'sx-price-whole')]");
-				HtmlElement firstItemFractionalPrice = (HtmlElement) amazonItem.getFirstByXPath(".//*[contains(@class, 'sx-price-fractional')]");
-				String itemPrice = (firstItemWholePrice == null || firstItemFractionalPrice == null) ? "0.0" : firstItemWholePrice.asText()+"."+
-						firstItemFractionalPrice.asText();
-				if (DEBUG) System.out.println("\t DEBUG: item " + i + " price: USD " + itemPrice);
-				
-				// URL price retrieval
-				HtmlAnchor itemAnchor = (HtmlAnchor) amazonItem.getFirstByXPath(".//h2[@data-attribute]/parent::a");
-				String itemURL = itemAnchor.getHrefAttribute().startsWith(AMAZON_URL) ? itemAnchor.getHrefAttribute() : 
-					AMAZON_URL+itemAnchor.getHrefAttribute(); 
-				if (DEBUG) System.out.println("\t DEBUG: item " + i + " anchor: " + itemURL);
-							
 				// item instantiation
-				Item item = new Item();
-				item.setTitle(itemTitle.asText());
-				item.setPrice(new Double(itemPrice) * 7.8);
-				item.setPortal(AMAZON_URL);
-				item.setUrl(itemURL);
+				Item item = new Item(getTitle(amazonItem, AMAZON_URL), getPrice(amazonItem, AMAZON_URL), getUrl(amazonItem, AMAZON_URL), AMAZON_URL);
 				amazonArrayList.add(item);
 				if (DEBUG) System.out.println("\t DEBUG: [amazon] stored item " + i + ": " + item.getPrice() + " HKD. Name: " +item.getTitle());
 			}
 			Collections.sort(amazonArrayList);
+			
 			
 			System.out.println("   DEBUG: scraping craigslist...");
 			String searchUrl = DEFAULT_URL + "search/sss?sort=rel&query=" + URLEncoder.encode(keyword, "UTF-8");
@@ -162,49 +209,27 @@ public class WebScraper {
 
 			for (int i = 0; i < items.size(); i++) {
 				HtmlElement htmlItem = (HtmlElement) items.get(i);	
-				HtmlAnchor itemAnchor = ((HtmlAnchor) htmlItem.getFirstByXPath(".//p[@class='result-info']/a"));
-				HtmlElement spanPrice = ((HtmlElement) htmlItem.getFirstByXPath(".//a/span[@class='result-price']"));
-				
-				// To fix bugs from the source code
-				String itemURL = itemAnchor.getHrefAttribute().startsWith(AMAZON_URL) ? itemAnchor.getHrefAttribute() : 
-					AMAZON_URL+itemAnchor.getHrefAttribute(); 
 
-				// It is possible that an item doesn't have any price, we set the price to 0.0
-				// in this case
-				String itemPrice = spanPrice == null ? "0.0" : spanPrice.asText();
-
-				Item item = new Item();
-				item.setTitle(itemAnchor.asText());
-				item.setUrl(itemURL);
-				item.setPortal(DEFAULT_URL);
-				item.setPrice(new Double(itemPrice.replace("$", ""))*7.8);
+				// item instantiation
+				Item item = new Item(getTitle(htmlItem, DEFAULT_URL), getPrice(htmlItem, DEFAULT_URL), getUrl(htmlItem, DEFAULT_URL), DEFAULT_URL);
 				craigsArrayList.add(item);
 			}
 			Collections.sort(craigsArrayList);
 			
 			// append final result to be returned based on sorting
-			Vector<Item> results = new Vector<Item>();
-			for (int i=0, j=0; !amazonArrayList.isEmpty() && !craigsArrayList.isEmpty();) {
-				if (amazonArrayList.isEmpty()) 
-					results.add(craigsArrayList.remove(j));
-				else if (craigsArrayList.isEmpty()) 
-					results.add(amazonArrayList.remove(i));
-				else if (craigsArrayList.get(j).getPrice() > amazonArrayList.get(i).getPrice()) 
-					results.add(amazonArrayList.remove(i));
-				else if (craigsArrayList.get(j).getPrice() < amazonArrayList.get(i).getPrice()) 
-					results.add(craigsArrayList.remove(j));
-				else if (craigsArrayList.get(j).getPrice() == amazonArrayList.get(i).getPrice())
-					results.add(craigsArrayList.remove(j));
-			}
 
-			System.out.print("Test");
+			Vector<Item> result = sortResult(amazonArrayList, craigsArrayList);
 
-			
+
 			// TODO: delete this line
-			if (DEBUG) for (Item i: results) System.out.println("DEBUG: result " + i.getPrice() + " PORTAL " + i.getPortal());
+			if (DEBUG) for (Item i: result) System.out.println("DEBUG: result " + i.getPrice() + " PORTAL " + i.getPortal());
 			
 			client.close();
-			return results;
+
+			// TODO: delete following line
+			System.out.println("DEBUG: scraping finished");
+			return result;
+
 		} catch (Exception e) {
 			System.out.println(e);
 		}
