@@ -164,9 +164,13 @@ public class WebScraper {
 				// in this case
 				String itemPrice = spanPrice == null ? "0.0" : spanPrice.asText();
 
+				// bug checking present from the skeleton code
+				String itemURL = itemAnchor.getHrefAttribute().startsWith(DEFAULT_URL) ? itemAnchor.getHrefAttribute() : 
+					DEFAULT_URL+itemAnchor.getHrefAttribute(); 
+				
 				Item item = new Item();
 				item.setTitle(itemAnchor.asText());
-				item.setUrl(DEFAULT_URL + itemAnchor.getHrefAttribute());
+				item.setUrl(itemURL);
 				item.setPortal(DEFAULT_URL);
 				item.setPrice(new Double(itemPrice.replace("$", ""))*7.8);
 				craigsArrayList.add(item);
