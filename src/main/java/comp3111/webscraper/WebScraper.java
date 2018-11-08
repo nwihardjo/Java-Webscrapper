@@ -190,8 +190,10 @@ public class WebScraper {
 	 */
 	public 	List<Item> scrape(String keyword) {
 		try {
+			/*
+			 * AMAZON SCRAPER
+			 */
 			System.out.println("   DEBUG: scraping amazon...");
-		    // Fetch data and query the website
 			String amazonUrl = AMAZON_URL+"s/ref=nb_sb_noss?url=search-alias%3Daps&field-keywords=" + URLEncoder.encode(keyword,"UTF-8");
 			HtmlPage amazonPage = client.getPage(amazonUrl);
 			List<?> amazonResult = (List<?>) amazonPage.getByXPath("//li[starts-with(@id, 'result_')]");
@@ -216,7 +218,9 @@ public class WebScraper {
 			Collections.sort(amazonArrayList);
 			
 			
-			
+			/*
+			 * NEWYORK CRAIGSLIST SCRAPER
+			 */
 			System.out.println("   DEBUG: scraping craigslist...");
 			String searchUrl = DEFAULT_URL + "search/sss?sort=rel&query=" + URLEncoder.encode(keyword, "UTF-8");
 			HtmlPage page = client.getPage(searchUrl);
@@ -235,7 +239,6 @@ public class WebScraper {
 			
 			// append final result to be returned based on sorting
 			Vector<Item> result = sortResult(amazonArrayList, craigsArrayList);
-
 			// TODO: delete this line
 			if (DEBUG) for (Item i: result) System.out.println("DEBUG: result " + i.getPrice() + " PORTAL " + i.getPortal());
 			
