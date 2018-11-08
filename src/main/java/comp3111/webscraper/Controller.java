@@ -3,7 +3,6 @@
  */
 package comp3111.webscraper;
 
-
 import javafx.event.ActionEvent;
 import javafx.event.Event;
 import javafx.event.EventHandler;
@@ -12,10 +11,11 @@ import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.Hyperlink;
-import javafx.scene.web.WebView;
-import javafx.scene.web.WebEngine;
-import javafx.scene.web.PopupFeatures;
-import javafx.util.Callback;
+
+import java.awt.*;
+import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.List;
 
 
@@ -170,24 +170,23 @@ public class Controller {
         boolean priceAvailable = (lowestPrice != 0.0);
         if (priceAvailable) {
             labelMin.setText(Double.toString(lowestPrice));
-            handlePopUp();
+            showLowestPricedItemInBrowser();
         }
         else
             labelMin.setText("-");
     }
 
-    private void handlePopUp() {
-        WebView browser = new WebView();
-        WebEngine webEngine = browser.getEngine();
+    private void showLowestPricedItemInBrowser() {
         labelMin.setOnAction(new EventHandler<ActionEvent>() {
             @Override
             public void handle(ActionEvent event) {
-                webEngine.load(getLowestPriceUrl());
-            }
-        });
-        webEngine.setCreatePopupHandler(new Callback<PopupFeatures, WebEngine>() {
-            @Override public WebEngine call(PopupFeatures config) {
-                return webEngine;
+                try {
+                    Desktop.getDesktop().browse(new URI(getLowestPriceUrl()));
+                } catch (IOException e1) {
+                    e1.printStackTrace();
+                } catch (URISyntaxException e1) {
+                    e1.printStackTrace();
+                }
             }
         });
     }
@@ -204,8 +203,5 @@ public class Controller {
         }
         return url;
     }
-
-
-
 }
 

@@ -5,7 +5,7 @@ import java.util.Arrays;
 
 public class Item implements Comparable <Item> {
 	private String title ; 
-	// price in HKD
+	// price in USD
 	private double price ;
 	private String url ;
 	private String portal ;
