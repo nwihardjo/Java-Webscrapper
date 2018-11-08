@@ -10,6 +10,15 @@ public class Item implements Comparable <Item> {
 	private String url ;
 	private String portal ;
 	
+	public Item(String title, Double price, String url, String portal) {
+		this.setTitle(title);
+		this.setPrice(price);
+		this.setUrl(url);
+		this.setPortal(portal);
+	}
+	
+	public Item() {}
+	
 	public String getTitle() {
 		return title;
 	}

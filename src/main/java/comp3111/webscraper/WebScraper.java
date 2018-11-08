@@ -91,31 +91,40 @@ public class WebScraper {
 		String xPathAddr = (portal == AMAZON_URL) ? ".//h2[@data-attribute]" : ".//p[@class='result-info']/a";
 		HtmlElement itemTitle = (HtmlElement) item.getFirstByXPath(xPathAddr);
 		
-		// non-item case, particularly on Amazon portal
+		// USE:CASE non-item case, particularly on Amazon portal
 		if (itemTitle == null || itemTitle.asText() == "") {
-			String alert_ = ((HtmlElement)item.getFirstByXPath("./div/div/h3")).asText();
-			if (DEBUG) System.out.println("\t DEBUG: NON-ITEM ALERT!!! Check following item --> " + alert_);
+			if (DEBUG) System.out.println("\t DEBUG: NON-ITEM ALERT!!!!");
 			return null;
 		}
-		
 		return itemTitle.asText();		
 	}
 
 	private static Double getPrice(HtmlElement item, String portal) {
+		if (DEBUG) System.out.println("\t DEBUG: entering getPrice method");
 		// return 0.0 if the price is not specified
 		if (portal == AMAZON_URL) {
 			// portal: amazon 
+			// USE CASE: only consider the main item, not the buying options
+			// USE CASE: only main price is used, not the offer with kindle, etc.
 			ArrayList<HtmlElement> ItemWholePrice = new ArrayList<HtmlElement> (item.getByXPath(".//*[contains(@class, 'sx-price-whole')]"));
 			ArrayList<HtmlElement> ItemFractionalPrice = new ArrayList<HtmlElement> (item.getByXPath(".//*[contains(@class, 'sx-price-fractional')]"));
-
-			if (ItemWholePrice == null || ItemFractionalPrice == null) 
-				return 0.0;
-			else if (ItemWholePrice.size() > 1 || ItemFractionalPrice.size() > 1) {
+			
+			if (ItemWholePrice == null || ItemFractionalPrice == null || ItemWholePrice.size() == 0 || ItemFractionalPrice.size() == 0) {
+				HtmlElement offeredPrice = (HtmlElement) item.getFirstByXPath(".//*[contains(text(),'offer')]");
+				if (offeredPrice == null) 
+					return 0.0;
+				else {
+					// USE CASE: no price available, but there some offers which contain price
+					if (DEBUG) System.out.println("\t DEBUG: no price available, but there are offers at " + offeredPrice.asText());
+					return new Double(offeredPrice.asText().replaceAll("\\(.*\\)", "").replace("$", "").replaceAll(",", ""));
+				}
+			} else if (ItemWholePrice.size() > 1 || ItemFractionalPrice.size() > 1) {
 				Double lowPrice = new Double (ItemWholePrice.get(0).asText() + "." + ItemFractionalPrice.get(0).asText());
 				Double highPrice = new Double (ItemWholePrice.get(1).asText() + "." + ItemFractionalPrice.get(1).asText());
-				// return average price if the price given is a range
+				// USE CASE: return average price if the price given is a range
 				return (lowPrice + highPrice) / 2.0;
 			} else { 
+				if (DEBUG) System.out.println("\t DEBUG: GETPRICE FINAL " + ItemWholePrice.size() + " and " + ItemFractionalPrice.size());
 				return new Double (ItemWholePrice.get(0).asText() + "." + ItemFractionalPrice.get(0).asText()); }
 		} else {
 			// portal: craigslist
@@ -125,9 +134,10 @@ public class WebScraper {
 			else 
 				return new Double(itemPrice.asText().replace("$", ""));
 		}
-			}
+		}
 
 	private static String getUrl(HtmlElement item, String portal) {
+		if (DEBUG) System.out.println("\t DEBUG: entering getUrl method");
 		String portal_url = (portal == AMAZON_URL) ? AMAZON_URL : DEFAULT_URL;
 		String xPathAddr = (portal == AMAZON_URL) ? ".//h2[@data-attribute]/parent::a" : ".//p[@class='result-info']/a";
 		HtmlAnchor itemUrl = (HtmlAnchor) item.getFirstByXPath(xPathAddr);
@@ -138,6 +148,7 @@ public class WebScraper {
 	}
 
 	private static Vector<Item> sortResult(ArrayList<Item> amazonArrayList, ArrayList<Item> craigsArrayList){
+		if (DEBUG) System.out.println("\t DEBUG: entering getTitle method");
 		Vector<Item> result = new Vector<Item>();
 		// sort ascending, for the same price, craigslist item goes first
 		for (int i=0, j=0; !amazonArrayList.isEmpty() && !craigsArrayList.isEmpty();) {
@@ -174,11 +185,13 @@ public class WebScraper {
 			if (DEBUG) System.out.println("\t DEBUG: [amazon] produce " + amazonResult.size() + " items");			
 					
 			// item retrieval
+			// USECASE: if the item is not a single search, i.e. "book", which return a whole sub-section, meaning no item found
 			for (int i = 0; i < amazonResult.size(); i++) {
 				HtmlElement amazonItem = (HtmlElement) amazonResult.get(i);
 
 				//non-item case
 				if (getTitle(amazonItem, AMAZON_URL) == null) continue;
+				if (DEBUG) System.out.println("\t DEBUG: entering item : " + getTitle(amazonItem, AMAZON_URL));
 				
 				// item instantiation
 				Item item = new Item(getTitle(amazonItem, AMAZON_URL), getPrice(amazonItem, AMAZON_URL), getUrl(amazonItem, AMAZON_URL), AMAZON_URL);
@@ -207,9 +220,11 @@ public class WebScraper {
 			Vector<Item> result = sortResult(amazonArrayList, craigsArrayList);
 
 			// TODO: delete this line
-			for (Item i: result) System.out.println("DEBUG: result " + i.getPrice() + " PORTAL " + i.getPortal());
+			if (DEBUG) for (Item i: result) System.out.println("DEBUG: result " + i.getPrice() + " PORTAL " + i.getPortal());
 			
 			client.close();
+			// TODO: delete following line
+			System.out.println("DEBUG: scraping finished");
 			return result;
 		} catch (Exception e) {
 			System.out.println(e);
