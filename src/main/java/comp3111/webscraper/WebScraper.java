@@ -183,25 +183,28 @@ public class WebScraper {
 			Collections.sort(craigsArrayList);
 			
 			// append final result to be returned based on sorting
-			Vector<Item> result = new Vector<Item>();
+			Vector<Item> results = new Vector<Item>();
 			for (int i=0, j=0; !amazonArrayList.isEmpty() && !craigsArrayList.isEmpty();) {
 				if (amazonArrayList.isEmpty()) 
-					result.add(craigsArrayList.remove(j));
+					results.add(craigsArrayList.remove(j));
 				else if (craigsArrayList.isEmpty()) 
-					result.add(amazonArrayList.remove(i));
+					results.add(amazonArrayList.remove(i));
 				else if (craigsArrayList.get(j).getPrice() > amazonArrayList.get(i).getPrice()) 
-					result.add(amazonArrayList.remove(i));
+					results.add(amazonArrayList.remove(i));
 				else if (craigsArrayList.get(j).getPrice() < amazonArrayList.get(i).getPrice()) 
-					result.add(craigsArrayList.remove(j));
+					results.add(craigsArrayList.remove(j));
 				else if (craigsArrayList.get(j).getPrice() == amazonArrayList.get(i).getPrice())
-					result.add(craigsArrayList.remove(j));
+					results.add(craigsArrayList.remove(j));
 			}
+
+			System.out.print("Test");
+
 			
 			// TODO: delete this line
-			if (DEBUG) for (Item i: result) System.out.println("DEBUG: result " + i.getPrice() + " PORTAL " + i.getPortal());
+			if (DEBUG) for (Item i: results) System.out.println("DEBUG: result " + i.getPrice() + " PORTAL " + i.getPortal());
 			
 			client.close();
-			return result;
+			return results;
 		} catch (Exception e) {
 			System.out.println(e);
 		}
