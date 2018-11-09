@@ -7,6 +7,7 @@ import javafx.event.ActionEvent;
 import javafx.event.Event;
 import javafx.event.EventHandler;
 import javafx.fxml.FXML;
+
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
@@ -20,6 +21,7 @@ import java.net.URISyntaxException;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Date;
+import javafx.application.Platform;
 
 
 /**
@@ -87,17 +89,30 @@ public class Controller {
      */
     @FXML
     private void actionSearch() {
-    	System.out.println("actionSearch: " + textFieldKeyword.getText());
-    	List<Item> result = scraper.scrape(textFieldKeyword.getText());
-    	String output = "";
-    	for (Item item : result) {
-    		output += item.getTitle() + "\t" + item.getPrice() + "\t" + item.getUrl() + "\n";
+    	Thread thread = new Thread(() -> {
+    		textAreaConsole.clear();
+    		System.out.println("actionSearch: " + textFieldKeyword.getText());
+    		List<Item> result = scraper.scrape(textFieldKeyword.getText(), this);
+    		String output = "";
+    		for (Item item : result) {
+    			output += item.getTitle() + "\t" + item.getPrice() + "\t" + item.getUrl() + "\n";
+    		}	
+    		printConsole(output); 
+    		scraperResult = result;
+    		refreshSummaryTab();
+    		togglePrimarySearch();
+    		toggleRefineSearch();
+    	});
+    	thread.start();
+    }
+    
+    // enable asynchronous printing on console tab
+    public void printConsole (String message) {
+    	if (Platform.isFxApplicationThread()) {
+    		textAreaConsole.appendText(message);
+    	} else {
+    		Platform.runLater(() -> textAreaConsole.appendText(message));
     	}
-    	textAreaConsole.setText(output);
-    	scraperResult = result;
-    	refreshSummaryTab();
-    	togglePrimarySearch();
-    	toggleRefineSearch();
     }
 
     @FXML
