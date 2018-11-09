@@ -1,7 +1,6 @@
 package comp3111.webscraper;
 
-import java.util.Arrays;
-
+import java.util.Date;
 
 public class Item implements Comparable <Item> {
 	private String title ; 
@@ -9,16 +8,25 @@ public class Item implements Comparable <Item> {
 	private double price ;
 	private String url ;
 	private String portal ;
+	private Date postedDate;
 	
-	public Item(String title, Double price, String url, String portal) {
+	public Item(String title, Double price, String url, String portal, Date postedDate) {
 		this.setTitle(title);
 		this.setPrice(price);
 		this.setUrl(url);
 		this.setPortal(portal);
+		this.setPostedDate(postedDate);
 	}
 	
 	public Item() {}
 	
+	
+	public Date getPostedDate() {
+		return postedDate;
+	}
+	public void setPostedDate(Date postedDate) {
+		this.postedDate = postedDate;
+	}
 	public String getTitle() {
 		return title;
 	}

@@ -4,12 +4,15 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.net.URLEncoder;
+import java.text.SimpleDateFormat;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
 
 import com.gargoylesoftware.htmlunit.WebClient;
 import com.gargoylesoftware.htmlunit.WebResponse;
+import com.gargoylesoftware.htmlunit.html.DomAttr;
 import com.gargoylesoftware.htmlunit.html.HtmlAnchor;
 import com.gargoylesoftware.htmlunit.html.HtmlElement;
 import com.gargoylesoftware.htmlunit.html.HtmlPage;
@@ -116,23 +119,23 @@ public class WebScraper {
 				else {
 					// USE CASE: no price available, but there some offers which contain price
 					if (DEBUG) System.out.println("\t DEBUG: no price available, but there are offers at " + offeredPrice.asText());
-					return new Double(offeredPrice.asText().replaceAll("\\(.*\\)", "").replace("$", "").replaceAll(",", ""));
+					return new Double(offeredPrice.asText().replaceAll("\\(.*\\)", "").replace("$", "").replace(",", ""));
 				}
 			} else if (ItemWholePrice.size() > 1 || ItemFractionalPrice.size() > 1) {
-				Double lowPrice = new Double (ItemWholePrice.get(0).asText() + "." + ItemFractionalPrice.get(0).asText());
-				Double highPrice = new Double (ItemWholePrice.get(1).asText() + "." + ItemFractionalPrice.get(1).asText());
+				Double lowPrice = new Double (ItemWholePrice.get(0).asText().replace("$", "").replace(",", "") + "." + ItemFractionalPrice.get(0).asText());
+				Double highPrice = new Double (ItemWholePrice.get(1).asText().replace("$", "").replace(",","") + "." + ItemFractionalPrice.get(1).asText());
 				// USE CASE: return average price if the price given is a range
 				return (lowPrice + highPrice) / 2.0;
 			} else { 
 				if (DEBUG) System.out.println("\t DEBUG: GETPRICE FINAL " + ItemWholePrice.size() + " and " + ItemFractionalPrice.size());
-				return new Double (ItemWholePrice.get(0).asText() + "." + ItemFractionalPrice.get(0).asText()); }
+				return new Double (ItemWholePrice.get(0).asText().replace(",", "") + "." + ItemFractionalPrice.get(0).asText()); }
 		} else {
 			// portal: craigslist
 			HtmlElement itemPrice = ((HtmlElement) item.getFirstByXPath(".//a/span[@class='result-price']"));
 			if (itemPrice == null) 
 				return 0.0;
 			else 
-				return new Double(itemPrice.asText().replace("$", ""));
+				return new Double(itemPrice.asText().replace("$", "").replace(",",""));
 		}
 		}
 
@@ -147,6 +150,19 @@ public class WebScraper {
 			return portal_url+itemUrl.getHrefAttribute();
 	}
 
+	private static Date getPostedDate(HtmlElement item) {
+		// currently only for craigslist
+		DomAttr itemDate = (DomAttr) item.getFirstByXPath(".//*[@class='result-date']/@datetime");
+		SimpleDateFormat dateFormatting = new SimpleDateFormat("yyyy-MM-dd HH:mm");
+		try { 
+			return dateFormatting.parse(itemDate.getValue()); 
+		} catch (Exception e) { 
+			if (DEBUG) System.out.println("\t DEBUG: postedDate non-existence!!!");
+			return null;
+			}
+		}
+	
+	
 	private static Vector<Item> sortResult(ArrayList<Item> amazonArrayList, ArrayList<Item> craigsArrayList){
 		if (DEBUG) System.out.println("\t DEBUG: entering getTitle method");
 		Vector<Item> result = new Vector<Item>();
@@ -166,7 +182,6 @@ public class WebScraper {
 		return result;
 	}
 	
-	
 	/**
 	 * The only method implemented in this class, to scrape web content from the craigslist
 	 * 
@@ -175,8 +190,10 @@ public class WebScraper {
 	 */
 	public 	List<Item> scrape(String keyword) {
 		try {
+			/*
+			 * AMAZON SCRAPER
+			 */
 			System.out.println("   DEBUG: scraping amazon...");
-		    // Fetch data and query the website
 			String amazonUrl = AMAZON_URL+"s/ref=nb_sb_noss?url=search-alias%3Daps&field-keywords=" + URLEncoder.encode(keyword,"UTF-8");
 			HtmlPage amazonPage = client.getPage(amazonUrl);
 			List<?> amazonResult = (List<?>) amazonPage.getByXPath("//li[starts-with(@id, 'result_')]");
@@ -194,13 +211,16 @@ public class WebScraper {
 				if (DEBUG) System.out.println("\t DEBUG: entering item : " + getTitle(amazonItem, AMAZON_URL));
 				
 				// item instantiation
-				Item item = new Item(getTitle(amazonItem, AMAZON_URL), getPrice(amazonItem, AMAZON_URL), getUrl(amazonItem, AMAZON_URL), AMAZON_URL);
+				Item item = new Item(getTitle(amazonItem, AMAZON_URL), getPrice(amazonItem, AMAZON_URL), getUrl(amazonItem, AMAZON_URL), AMAZON_URL, null);
 				amazonArrayList.add(item);
 				if (DEBUG) System.out.println("\t DEBUG: [amazon] stored item " + i + ": " + item.getPrice() + " HKD. Name: " +item.getTitle());
 			}
 			Collections.sort(amazonArrayList);
 			
 			
+			/*
+			 * NEWYORK CRAIGSLIST SCRAPER
+			 */
 			System.out.println("   DEBUG: scraping craigslist...");
 			String searchUrl = DEFAULT_URL + "search/sss?sort=rel&query=" + URLEncoder.encode(keyword, "UTF-8");
 			HtmlPage page = client.getPage(searchUrl);
@@ -209,9 +229,10 @@ public class WebScraper {
 
 			for (int i = 0; i < items.size(); i++) {
 				HtmlElement htmlItem = (HtmlElement) items.get(i);	
-
+	
 				// item instantiation
-				Item item = new Item(getTitle(htmlItem, DEFAULT_URL), getPrice(htmlItem, DEFAULT_URL), getUrl(htmlItem, DEFAULT_URL), DEFAULT_URL);
+				Item item = new Item(getTitle(htmlItem, DEFAULT_URL), getPrice(htmlItem, DEFAULT_URL), getUrl(htmlItem, DEFAULT_URL), DEFAULT_URL, 
+						getPostedDate(htmlItem));
 				craigsArrayList.add(item);
 			}
 			Collections.sort(craigsArrayList);
@@ -219,7 +240,6 @@ public class WebScraper {
 			// append final result to be returned based on sorting
 
 			Vector<Item> result = sortResult(amazonArrayList, craigsArrayList);
-
 
 			// TODO: delete this line
 			if (DEBUG) for (Item i: result) System.out.println("DEBUG: result " + i.getPrice() + " PORTAL " + i.getPortal());
