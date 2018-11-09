@@ -54,7 +54,6 @@ public class WebScraperApplication extends Application {
    		stage.setScene(scene);
    		stage.setTitle("WebScrapper");
    		stage.show();
-    		
 
 	}
 
