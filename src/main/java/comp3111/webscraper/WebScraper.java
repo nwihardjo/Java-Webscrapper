@@ -18,6 +18,12 @@ import com.gargoylesoftware.htmlunit.html.HtmlElement;
 import com.gargoylesoftware.htmlunit.html.HtmlPage;
 import java.util.Vector;
 
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+
 /**
  * WebScraper provide a sample code that scrape web content. After it is constructed, you can call the method scrape with a keyword, 
  * the client will go to the default url and parse the page by looking at the HTML DOM.  
@@ -253,6 +259,26 @@ public class WebScraper {
 			}
 			Collections.sort(amazonArrayList);
 			
+			System.out.println("\t DEBUG: Amazon has : " + amazonArrayList.size() + " items");
+			int nThreads = 15;
+			ExecutorService executor = Executors.newFixedThreadPool(nThreads);
+			List<Future<String>> futureList = new ArrayList<Future<String>>();
+			for (int i = 0; i < amazonArrayList.size(); i++) {
+				Callable<String> worker = new SubScraper(amazonArrayList.get(i).getUrl());
+				Future<String> submit = executor.submit(worker);
+				futureList.add(submit);
+			}
+			System.out.println("\t DEBUG: Future list size: " + futureList.size());
+			for (Future<String> future : futureList) {
+				try {
+					System.out.println("\t DEBUG: RETRIEVED FROM WORKER: " + future.get());
+				} catch(InterruptedException e) {
+					e.printStackTrace();
+				} catch(ExecutionException e) {
+					e.printStackTrace();
+				}
+			}
+			executor.shutdown();
 			
 			/*
 			 * NEWYORK CRAIGSLIST SCRAPER
@@ -275,18 +301,14 @@ public class WebScraper {
 			Collections.sort(craigsArrayList);
 			
 			// append final result to be returned based on sorting
-
 			Vector<Item> result = sortResult(amazonArrayList, craigsArrayList);
-
 			// TODO: delete this line
 			if (DEBUG) for (Item i: result) System.out.println("DEBUG: result " + i.getPrice() + " PORTAL " + i.getPortal());
 			
 			client.close();
-
 			// TODO: delete following line
 			System.out.println("DEBUG: scraping finished");
 			return result;
-
 		} catch (Exception e) {
 			System.out.println(e);
 		}
