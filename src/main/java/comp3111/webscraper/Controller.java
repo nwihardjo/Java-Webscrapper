@@ -7,6 +7,7 @@ import javafx.event.ActionEvent;
 import javafx.event.Event;
 import javafx.event.EventHandler;
 import javafx.fxml.FXML;
+import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.scene.control.TextArea;
@@ -16,6 +17,7 @@ import java.awt.*;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Date;
 
@@ -47,19 +49,28 @@ public class Controller {
 
     @FXML
     private TextField textFieldKeyword;
-    
+
+    @FXML
+    private TextField refineKeyword;
+
     @FXML
     private TextArea textAreaConsole;
-    
+
+    @FXML
+    private Button goButton;
+
+    @FXML
+    private Button refineButton;
+
     private WebScraper scraper;
 
     private List<Item> scraperResult;
-    
+
     /**
      * Default controller
      */
     public Controller() {
-    	scraper = new WebScraper();
+        scraper = new WebScraper();
     }
 
     /**
@@ -67,9 +78,10 @@ public class Controller {
      */
     @FXML
     private void initialize() {
-    	
+        refineKeyword.setDisable(true);
+        refineButton.setDisable(true);
     }
-    
+
     /**
      * Called when the search button is pressed.
      */
@@ -83,7 +95,55 @@ public class Controller {
     	}
     	textAreaConsole.setText(output);
     	scraperResult = result;
-    	fillSummaryTab();
+    	refreshSummaryTab();
+    	togglePrimarySearch();
+    	toggleRefineSearch();
+    }
+
+    @FXML
+    private void refineSearch() {
+        System.out.println("refineSearch: " + refineKeyword.getText());
+        String refineStr = refineKeyword.getText().toLowerCase();
+        Iterator<Item> resultItr = scraperResult.iterator();
+//        System.out.println("DEBUG: Before refining, count is: " + scraperResult.size());
+        while (resultItr.hasNext()) {
+            Item currentItem = resultItr.next();
+            String itemTitle = currentItem.getTitle().toLowerCase();
+            if (!itemTitle.contains(refineStr)) {
+                resultItr.remove();
+            }
+        }
+//        System.out.println("DEBUG: After refining, count is: " + scraperResult.size());
+//        System.out.println("DEBUG: After refining, the following items are");
+        for (Item item : scraperResult) {
+            System.out.println(item.getTitle());
+        }
+        refreshSummaryTab();
+        togglePrimarySearch();
+        toggleRefineSearch();
+    }
+
+    private void togglePrimarySearch() {
+        if (textFieldKeyword.isDisabled()) {
+            textFieldKeyword.setDisable(false);
+            goButton.setDisable(false);
+        }
+        else {
+            textFieldKeyword.setDisable(true);
+            goButton.setDisable(true);
+        }
+
+    }
+
+    private void toggleRefineSearch() {
+        if (refineKeyword.isDisabled()) {
+            refineKeyword.setDisable(false);
+            refineButton.setDisable(false);
+        }
+        else {
+            refineKeyword.setDisable(true);
+            refineButton.setDisable(true);
+        }
     }
     
     /**
@@ -99,7 +159,7 @@ public class Controller {
         System.out.println("Summary tab selected");
     }
 
-    private void fillSummaryTab() {
+    private void refreshSummaryTab() {
         int itemCount = getItemCount();
         double avgPrice = getAvgPrice();
         double lowestPrice = getLowestPrice();
@@ -241,9 +301,8 @@ public class Controller {
                 // Debug: to check if still enters
                 // System.out.println(item.getPostedDate());
                 if (item.getPostedDate().after(latestDate)) {
-                    System.out.println("Latest Date: " + latestDate.toString());
+//                    System.out.println("Latest Date: " + latestDate.toString());
                     latestDate = item.getPostedDate();
-                    System.out.println(item);
                     latestPostURI = item.getUrl();
                 }
             }
