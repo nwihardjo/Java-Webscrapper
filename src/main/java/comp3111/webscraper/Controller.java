@@ -92,12 +92,7 @@ public class Controller {
 
     @FXML
     private void displaySummary(Event event) {
-        // Right now no need
         System.out.println("Summary tab selected");
-        // TODO: correctly fill the tab for summary
-        // Get number of items fetched, average selling price, lowest selling price and display link
-        // Get latest post and give hyperlink
-
     }
 
     private void fillSummaryTab() {
@@ -107,6 +102,7 @@ public class Controller {
         setLabelCount(itemCount);
         setLabelPrice(avgPrice);
         setLabelMin(lowestPrice);
+        setLabelLatest();
     }
 
     private int getItemCount() {
@@ -140,7 +136,7 @@ public class Controller {
     private void setLabelPrice(double avgPrice) {
         boolean priceAvailable = (avgPrice != 0.0);
         if (priceAvailable)
-            labelPrice.setText(Double.toString(avgPrice));
+            labelPrice.setText(String.format("%.2f", avgPrice));
         else
             labelPrice.setText("-");
     }
@@ -169,7 +165,7 @@ public class Controller {
         // else display "-"
         boolean priceAvailable = (lowestPrice != 0.0);
         if (priceAvailable) {
-            labelMin.setText(Double.toString(lowestPrice));
+            labelMin.setText(String.format("%.2f", lowestPrice));
             showLowestPricedItemInBrowser();
         }
         else
@@ -181,7 +177,7 @@ public class Controller {
             @Override
             public void handle(ActionEvent event) {
                 try {
-                    Desktop.getDesktop().browse(new URI(getLowestPriceUrl()));
+                    Desktop.getDesktop().browse(new URI(getLowestPriceURI()));
                 } catch (IOException e1) {
                     e1.printStackTrace();
                 } catch (URISyntaxException e1) {
@@ -191,7 +187,7 @@ public class Controller {
         });
     }
 
-    private String getLowestPriceUrl() {
+    private String getLowestPriceURI() {
         // Returns the first item with the lowest price given the scraperResult (already sorted in ascending order)
         double lowestPrice = getLowestPrice();
         String url = "";
@@ -203,5 +199,36 @@ public class Controller {
         }
         return url;
     }
+
+    private void setLabelLatest() {
+        boolean itemsFound = (getItemCount() != 0);
+        if (itemsFound) {
+            showLatestPostInBrowser();
+        }
+        else
+            labelLatest.setText("-");
+    }
+
+    private void showLatestPostInBrowser() {
+        labelLatest.setText("See latest post");
+        labelLatest.setOnAction(new EventHandler<ActionEvent>() {
+            @Override
+            public void handle(ActionEvent event) {
+                try {
+                    Desktop.getDesktop().browse(new URI(getLatestPostURI()));
+                } catch (IOException e1) {
+                    e1.printStackTrace();
+                } catch (URISyntaxException e1) {
+                    e1.printStackTrace();
+                }
+            }
+        });
+    }
+
+    // TODO: finish this function
+    private String getLatestPostURI() {
+        return "Dummy string that represents latest post URI";
+    }
+
 }
 

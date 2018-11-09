@@ -87,13 +87,13 @@
                                 <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0">
                                        <children>
                                           <Label layoutX="51.0" layoutY="48.0" text="Number of Data Fetched:" />
-                                          <Label fx:id="labelCount" alignment="CENTER" layoutX="279.0" layoutY="48.0" prefHeight="17.0" prefWidth="78.0" text="&lt;total&gt;" />
+                                          <Label fx:id="labelCount" layoutX="286.0" layoutY="48.0" prefHeight="17.0" prefWidth="78.0" text="&lt;total&gt;" />
                                           <Label layoutX="51.0" layoutY="88.0" prefHeight="17.0" prefWidth="155.0" text="Average Selling Price:" />
-                                          <Label fx:id="labelPrice" alignment="CENTER" layoutX="282.0" layoutY="88.0" text="&lt;AvgPrice&gt;" />
+                                          <Label fx:id="labelPrice" layoutX="282.0" layoutY="88.0" text="&lt;AvgPrice&gt;" />
                                           <Label layoutX="51.0" layoutY="128.0" text="Lowest Selling Price:" />
-                                          <Hyperlink fx:id="labelMin" alignment="CENTER" layoutX="283.0" layoutY="124.0" text="&lt;Lowest&gt;" />
+                                          <Hyperlink fx:id="labelMin" layoutX="280.0" layoutY="124.0" text="&lt;Lowest&gt;" />
                                           <Label layoutX="51.0" layoutY="164.0" text="Latest Post:" />
-                                          <Hyperlink fx:id="labelLatest" alignment="CENTER" layoutX="286.0" layoutY="160.0" text="&lt;Latest&gt;" />
+                                          <Hyperlink fx:id="labelLatest" layoutX="282.0" layoutY="160.0" text="&lt;Latest&gt;" />
                                        </children>
                                     </AnchorPane>
                               </content>
