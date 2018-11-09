@@ -89,6 +89,22 @@ public class WebScraper {
 		client.waitForBackgroundJavaScript(100000);
 	}
 
+	// handle craigslist portal only
+	public String getNumPages (String keyword, Controller controller) {
+		try {
+			String searchUrl = DEFAULT_URL + "search/sss?sort=rel&query=" + URLEncoder.encode(keyword, "UTF-8");
+			HtmlPage portalPage = client.getPage(searchUrl);
+			HtmlElement lowerBoundRange = (HtmlElement) portalPage.getFirstByXPath("//*[@class='rangeFrom']");
+			HtmlElement upperBoundRange = (HtmlElement) portalPage.getFirstByXPath("//*[@class='rangeTo']");
+			HtmlElement totalItem = (HtmlElement) portalPage.getFirstByXPath("//*[@class='totalcount']");
+			String ret = lowerBoundRange.asText() + " - " + upperBoundRange.asText() + " out of " + totalItem.asText();
+			return ret;
+		} catch (Exception e) {
+			System.out.println(e);
+			return null;
+			}
+	}
+	
 	private static String getTitle(HtmlElement item, String portal) {
 		if (DEBUG) System.out.println("\t DEBUG: entering getTitle method");
 		String xPathAddr = (portal == AMAZON_URL) ? ".//h2[@data-attribute]" : ".//p[@class='result-info']/a";
@@ -102,6 +118,19 @@ public class WebScraper {
 		return itemTitle.asText();		
 	}
 
+	// currently for craigslist item
+	private static ArrayList<Item> scrapePage(HtmlPage page) {
+		List<?> items = (List<?>) page.getByXPath("//li[@class='result-row']");
+		ArrayList<Item> craigsArrayList = new ArrayList<Item>();
+		for (int i = 0; i < items.size(); i++) {
+			HtmlElement htmlItem = (HtmlElement) items.get(i);	
+			Item item = new Item(getTitle(htmlItem, DEFAULT_URL), getPrice(htmlItem, DEFAULT_URL), getUrl(htmlItem, DEFAULT_URL), DEFAULT_URL, 
+					getPostedDate(htmlItem));
+			craigsArrayList.add(item);
+		}
+		return craigsArrayList;
+	}
+	
 	private static Double getPrice(HtmlElement item, String portal) {
 		if (DEBUG) System.out.println("\t DEBUG: entering getPrice method");
 		// return 0.0 if the price is not specified
@@ -161,8 +190,7 @@ public class WebScraper {
 			return null;
 			}
 		}
-	
-	
+		
 	private static Vector<Item> sortResult(ArrayList<Item> amazonArrayList, ArrayList<Item> craigsArrayList){
 		if (DEBUG) System.out.println("\t DEBUG: entering getTitle method");
 		Vector<Item> result = new Vector<Item>();
@@ -188,12 +216,12 @@ public class WebScraper {
 	 * @param keyword - the keyword you want to search
 	 * @return A list of Item that has found. A zero size list is return if nothing is found. Null if any exception (e.g. no connectivity)
 	 */
-	public 	List<Item> scrape(String keyword) {
+	public List<Item> scrape(String keyword, Controller controller) {
 		try {
 			/*
 			 * AMAZON SCRAPER
 			 */
-			System.out.println("   DEBUG: scraping amazon...");
+			controller.printConsole("Scraping amazon... \n"); System.out.println("   DEBUG: scraping amazon...");
 			String amazonUrl = AMAZON_URL+"s/ref=nb_sb_noss?url=search-alias%3Daps&field-keywords=" + URLEncoder.encode(keyword,"UTF-8");
 			HtmlPage amazonPage = client.getPage(amazonUrl);
 			List<?> amazonResult = (List<?>) amazonPage.getByXPath("//li[starts-with(@id, 'result_')]");
@@ -209,8 +237,7 @@ public class WebScraper {
 				//non-item case
 				if (getTitle(amazonItem, AMAZON_URL) == null) continue;
 				if (DEBUG) System.out.println("\t DEBUG: entering item : " + getTitle(amazonItem, AMAZON_URL));
-				
-				// item instantiation
+
 				Item item = new Item(getTitle(amazonItem, AMAZON_URL), getPrice(amazonItem, AMAZON_URL), getUrl(amazonItem, AMAZON_URL), AMAZON_URL, null);
 				amazonArrayList.add(item);
 				if (DEBUG) System.out.println("\t DEBUG: [amazon] stored item " + i + ": " + item.getPrice() + " HKD. Name: " +item.getTitle());
@@ -221,20 +248,36 @@ public class WebScraper {
 			/*
 			 * NEWYORK CRAIGSLIST SCRAPER
 			 */
-			System.out.println("   DEBUG: scraping craigslist...");
+			controller.printConsole("Scraping craigslist... \n"); System.out.println("   DEBUG: scraping craigslist...");
 			String searchUrl = DEFAULT_URL + "search/sss?sort=rel&query=" + URLEncoder.encode(keyword, "UTF-8");
 			HtmlPage page = client.getPage(searchUrl);
-			List<?> items = (List<?>) page.getByXPath("//li[@class='result-row']");
+//			List<?> items = (List<?>) page.getByXPath("//li[@class='result-row']");
 			ArrayList<Item> craigsArrayList = new ArrayList<Item>();
-
-			for (int i = 0; i < items.size(); i++) {
-				HtmlElement htmlItem = (HtmlElement) items.get(i);	
-	
-				// item instantiation
-				Item item = new Item(getTitle(htmlItem, DEFAULT_URL), getPrice(htmlItem, DEFAULT_URL), getUrl(htmlItem, DEFAULT_URL), DEFAULT_URL, 
-						getPostedDate(htmlItem));
-				craigsArrayList.add(item);
+			HtmlElement lowerBoundRange = (HtmlElement) page.getFirstByXPath("//*[@class='rangeFrom']");
+			HtmlElement upperBoundRange = (HtmlElement) page.getFirstByXPath("//*[@class='rangeTo']");
+			HtmlElement totalItem = (HtmlElement) page.getFirstByXPath("//*[@class='totalcount']");
+			
+			int currentPage = 1;
+			int numOfPages = (lowerBoundRange == null || upperBoundRange == null || totalItem == null) ? 0 : 
+				((int) Math.ceil(Integer.parseInt(totalItem.asText())/Integer.parseInt(upperBoundRange.asText())));
+			controller.printConsole("Scraping page " + currentPage + " out of " + numOfPages + "\n");
+			
+			// handle pagination
+			craigsArrayList.addAll(scrapePage(page));
+			while ((HtmlElement) page.getFirstByXPath("//a[@class='button next']") != null) {
+				currentPage += 1;
+				controller.printConsole("Scraping page " + currentPage + " out of " + numOfPages + "\n");
+				page = client.getPage(DEFAULT_URL + ((HtmlAnchor)page.getFirstByXPath("//a[@class='button next']")).getHrefAttribute());
+				craigsArrayList.addAll(scrapePage(page));
 			}
+			
+//			for (int i = 0; i < items.size(); i++) {
+//				HtmlElement htmlItem = (HtmlElement) items.get(i);	
+//
+//				Item item = new Item(getTitle(htmlItem, DEFAULT_URL), getPrice(htmlItem, DEFAULT_URL), getUrl(htmlItem, DEFAULT_URL), DEFAULT_URL, 
+//						getPostedDate(htmlItem));
+//				craigsArrayList.add(item);
+//			}
 			Collections.sort(craigsArrayList);
 			
 			// append final result to be returned based on sorting
