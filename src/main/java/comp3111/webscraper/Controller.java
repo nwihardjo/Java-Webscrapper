@@ -18,12 +18,16 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.List;
+import java.util.Date;
 import javafx.application.Platform;
 
 
 /**
  * 
  * @author kevinw
+ * @author hanifdean
+ * @author nwihardjo
+ * @author albertparedandan
  *
  *
  * Controller class that manage GUI interaction. Please see document about JavaFX for details.
@@ -203,7 +207,11 @@ public class Controller {
     }
 
     private String getLowestPriceURI() {
-        // Returns the first item with the lowest price given the scraperResult (already sorted in ascending order)
+        /*
+         * Returns the first item with the lowest price
+         * if there are two items with the same lowest price,
+         * function returns the first one.
+         */
         double lowestPrice = getLowestPrice();
         String url = "";
         for (Item item : scraperResult) {
@@ -240,10 +248,22 @@ public class Controller {
         });
     }
 
-    // TODO: finish this function
     private String getLatestPostURI() {
-        return "Dummy string that represents latest post URI";
+        Date latestDate = scraperResult.get(0).getPostedDate();
+        String latestPostURI = scraperResult.get(0).getUrl();
+        for (Item item: scraperResult) {
+            if (item.getPostedDate() != null) {
+                // Debug: to check if still enters
+                // System.out.println(item.getPostedDate());
+                if (item.getPostedDate().after(latestDate)) {
+                    System.out.println("Latest Date: " + latestDate.toString());
+                    latestDate = item.getPostedDate();
+                    System.out.println(item);
+                    latestPostURI = item.getUrl();
+                }
+            }
+        }
+        return latestPostURI;
     }
-
 }
 
