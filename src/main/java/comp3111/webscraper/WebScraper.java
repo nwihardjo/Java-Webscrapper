@@ -168,15 +168,24 @@ public class WebScraper {
 		}
 		}
 
+	// currently for craigslist portal only
+	private static String getNextPage(HtmlPage page) {
+		HtmlAnchor nextPageUrl = (HtmlAnchor) page.getFirstByXPath("//a[@class='button next']");
+		if (nextPageUrl == null) {
+			if (DEBUG) System.out.println("\t DEBUG: there aren't any next page!");
+			return null;
+		} else 
+			return (nextPageUrl.getHrefAttribute().startsWith(DEFAULT_URL)) ? nextPageUrl.getHrefAttribute() :
+				DEFAULT_URL + nextPageUrl.getHrefAttribute();
+	}
+	
 	private static String getUrl(HtmlElement item, String portal) {
 		if (DEBUG) System.out.println("\t DEBUG: entering getUrl method");
 		String portal_url = (portal == AMAZON_URL) ? AMAZON_URL : DEFAULT_URL;
 		String xPathAddr = (portal == AMAZON_URL) ? ".//h2[@data-attribute]/parent::a" : ".//p[@class='result-info']/a";
 		HtmlAnchor itemUrl = (HtmlAnchor) item.getFirstByXPath(xPathAddr);
-		if (itemUrl.getHrefAttribute().startsWith(portal_url)) 
-			return itemUrl.getHrefAttribute();
-		else 
-			return portal_url+itemUrl.getHrefAttribute();
+		return (itemUrl.getHrefAttribute().startsWith(portal_url)) ? itemUrl.getHrefAttribute() : 
+			portal_url + itemUrl.getHrefAttribute();
 	}
 
 	private static Date getPostedDate(HtmlElement item) {
@@ -251,33 +260,18 @@ public class WebScraper {
 			controller.printConsole("Scraping craigslist... \n"); System.out.println("   DEBUG: scraping craigslist...");
 			String searchUrl = DEFAULT_URL + "search/sss?sort=rel&query=" + URLEncoder.encode(keyword, "UTF-8");
 			HtmlPage page = client.getPage(searchUrl);
-//			List<?> items = (List<?>) page.getByXPath("//li[@class='result-row']");
 			ArrayList<Item> craigsArrayList = new ArrayList<Item>();
-			HtmlElement lowerBoundRange = (HtmlElement) page.getFirstByXPath("//*[@class='rangeFrom']");
-			HtmlElement upperBoundRange = (HtmlElement) page.getFirstByXPath("//*[@class='rangeTo']");
-			HtmlElement totalItem = (HtmlElement) page.getFirstByXPath("//*[@class='totalcount']");
-			
-			int currentPage = 1;
-			int numOfPages = (lowerBoundRange == null || upperBoundRange == null || totalItem == null) ? 0 : 
-				((int) Math.ceil(Integer.parseInt(totalItem.asText())/Integer.parseInt(upperBoundRange.asText())));
-			controller.printConsole("Scraping page " + currentPage + " out of " + numOfPages + "\n");
-			
+		
 			// handle pagination
-			craigsArrayList.addAll(scrapePage(page));
-			while ((HtmlElement) page.getFirstByXPath("//a[@class='button next']") != null) {
-				currentPage += 1;
-				controller.printConsole("Scraping page " + currentPage + " out of " + numOfPages + "\n");
-				page = client.getPage(DEFAULT_URL + ((HtmlAnchor)page.getFirstByXPath("//a[@class='button next']")).getHrefAttribute());
+			int currentPage = 1;
+			do {
+				if (currentPage != 1) 
+					page = client.getPage(getNextPage(page));
+				controller.printConsole("Scraping page " + currentPage + "\n");
 				craigsArrayList.addAll(scrapePage(page));
-			}
+				currentPage += 1;
+			} while (getNextPage(page) != null);
 			
-//			for (int i = 0; i < items.size(); i++) {
-//				HtmlElement htmlItem = (HtmlElement) items.get(i);	
-//
-//				Item item = new Item(getTitle(htmlItem, DEFAULT_URL), getPrice(htmlItem, DEFAULT_URL), getUrl(htmlItem, DEFAULT_URL), DEFAULT_URL, 
-//						getPostedDate(htmlItem));
-//				craigsArrayList.add(item);
-//			}
 			Collections.sort(craigsArrayList);
 			
 			// append final result to be returned based on sorting
