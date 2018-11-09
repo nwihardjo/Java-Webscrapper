@@ -238,14 +238,18 @@ public class WebScraper {
 			Collections.sort(craigsArrayList);
 			
 			// append final result to be returned based on sorting
+
 			Vector<Item> result = sortResult(amazonArrayList, craigsArrayList);
+
 			// TODO: delete this line
 			if (DEBUG) for (Item i: result) System.out.println("DEBUG: result " + i.getPrice() + " PORTAL " + i.getPortal());
 			
 			client.close();
+
 			// TODO: delete following line
 			System.out.println("DEBUG: scraping finished");
 			return result;
+
 		} catch (Exception e) {
 			System.out.println(e);
 		}
