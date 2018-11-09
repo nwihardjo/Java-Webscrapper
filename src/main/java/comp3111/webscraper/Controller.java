@@ -87,23 +87,39 @@ public class Controller {
     /**
      * Called when the search button is pressed.
      */
+//    @FXML
+//    private void actionSearch() {
+//    	Thread thread = new Thread(() -> {
+//            textAreaConsole.clear();
+//            System.out.println("actionSearch: " + textFieldKeyword.getText());
+//            List<Item> result = scraper.scrape(textFieldKeyword.getText(), this);
+//            String output = "";
+//            for (Item item : result) {
+//                output += item.getTitle() + "\t" + item.getPrice() + "\t" + item.getUrl() + "\n";
+//            }
+//            printConsole(output);
+//            scraperResult = result;
+//            refreshSummaryTab();
+//            togglePrimarySearch();
+//            toggleRefineSearch();
+//    	});
+//    	thread.start();
+//    }
+
     @FXML
     private void actionSearch() {
-    	Thread thread = new Thread(() -> {
-    		textAreaConsole.clear();
-    		System.out.println("actionSearch: " + textFieldKeyword.getText());
-    		List<Item> result = scraper.scrape(textFieldKeyword.getText(), this);
-    		String output = "";
-    		for (Item item : result) {
-    			output += item.getTitle() + "\t" + item.getPrice() + "\t" + item.getUrl() + "\n";
-    		}	
-    		printConsole(output); 
-    		scraperResult = result;
-    		refreshSummaryTab();
-    		togglePrimarySearch();
-    		toggleRefineSearch();
-    	});
-    	thread.start();
+        textAreaConsole.clear();
+        System.out.println("actionSearch: " + textFieldKeyword.getText());
+        List<Item> result = scraper.scrape(textFieldKeyword.getText(), this);
+        String output = "";
+        for (Item item : result) {
+            output += item.getTitle() + "\t" + item.getPrice() + "\t" + item.getUrl() + "\n";
+        }
+        printConsole(output);
+        scraperResult = result;
+        refreshSummaryTab();
+        togglePrimarySearch();
+        toggleRefineSearch();
     }
     
     // enable asynchronous printing on console tab
