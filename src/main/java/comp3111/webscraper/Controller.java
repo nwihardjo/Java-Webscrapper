@@ -52,7 +52,7 @@ public class Controller {
     private WebScraper scraper;
 
     private List<Item> scraperResult;
-    
+   
     /**
      * Default controller
      */
@@ -81,9 +81,10 @@ public class Controller {
     		for (Item item : result) {
     			output += item.getTitle() + "\t" + item.getPrice() + "\t" + item.getUrl() + "\n";
     		}	
+    		textAreaConsole.clear();
     		printConsole(output); 
     		scraperResult = result;
-    		fillSummaryTab();
+//    		fillSummaryTab();
     	});
     	thread.start();
     }
