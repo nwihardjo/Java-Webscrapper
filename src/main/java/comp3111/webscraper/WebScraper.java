@@ -1,8 +1,5 @@
 package comp3111.webscraper;
 
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
 import java.net.URLEncoder;
 import java.text.SimpleDateFormat;
 import java.util.List;
@@ -11,74 +8,25 @@ import java.util.Collections;
 import java.util.Date;
 
 import com.gargoylesoftware.htmlunit.WebClient;
-import com.gargoylesoftware.htmlunit.WebResponse;
 import com.gargoylesoftware.htmlunit.html.DomAttr;
 import com.gargoylesoftware.htmlunit.html.HtmlAnchor;
 import com.gargoylesoftware.htmlunit.html.HtmlElement;
 import com.gargoylesoftware.htmlunit.html.HtmlPage;
 import java.util.Vector;
 
-/**
- * WebScraper provide a sample code that scrape web content. After it is constructed, you can call the method scrape with a keyword, 
- * the client will go to the default url and parse the page by looking at the HTML DOM.  
- * <br/>
- * In this particular sample code, it access to craigslist.org. You can directly search on an entry by typing the URL
- * <br/>
- * https://newyork.craigslist.org/search/sss?sort=rel&amp;query=KEYWORD
- *  <br/>
- * where KEYWORD is the keyword you want to search.
- * <br/>
- * Assume you are working on Chrome, paste the url into your browser and press F12 to load the source code of the HTML. You might be freak
- * out if you have never seen a HTML source code before. Keep calm and move on. Press Ctrl-Shift-C (or CMD-Shift-C if you got a mac) and move your
- * mouse cursor around, different part of the HTML code and the corresponding the HTML objects will be highlighted. Explore your HTML page from
- * body &rarr; section class="page-container" &rarr; form id="searchform" &rarr; div class="content" &rarr; ul class="rows" &rarr; any one of the multiple 
- * li class="result-row" &rarr; p class="result-info". You might see something like this:
- * <br/>
- * <pre>
- * {@code
- *    <p class="result-info">
- *        <span class="icon icon-star" role="button" title="save this post in your favorites list">
- *           <span class="screen-reader-text">favorite this post</span>
- *       </span>
- *       <time class="result-date" datetime="2018-06-21 01:58" title="Thu 21 Jun 01:58:44 AM">Jun 21</time>
- *       <a href="https://newyork.craigslist.org/que/clt/d/green-star-polyp-gsp-on-rock/6596253604.html" data-id="6596253604" class="result-title hdrlnk">Green Star Polyp GSP on a rock frag</a>
- *       <span class="result-meta">
- *               <span class="result-price">$15</span>
- *               <span class="result-tags">
- *                   pic
- *                   <span class="maptag" data-pid="6596253604">map</span>
- *               </span>
- *               <span class="banish icon icon-trash" role="button">
- *                   <span class="screen-reader-text">hide this posting</span>
- *               </span>
- *           <span class="unbanish icon icon-trash red" role="button" aria-hidden="true"></span>
- *           <a href="#" class="restore-link">
- *               <span class="restore-narrow-text">restore</span>
- *               <span class="restore-wide-text">restore this posting</span>
- *           </a>
- *       </span>
- *   </p>
- *}
- *</pre>
- * <br/>
- * The code 
- * <pre>
- * {@code
- * List<?> items = (List<?>) page.getByXPath("//li[@class='result-row']");
- * }
- * </pre>
- * extracts all result-row and stores the corresponding HTML elements to a list called items. Later in the loop it extracts the anchor tag 
- * &lsaquo; a &rsaquo; to retrieve the display text (by .asText()) and the link (by .getHrefAttribute()). It also extracts  
- * 
- *
- */
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+
 public class WebScraper {
 
 	private static final String DEFAULT_URL = "https://newyork.craigslist.org/";
 	private static final String AMAZON_URL = "https://www.amazon.com/";
 	private WebClient client;
 	private static final Boolean DEBUG = false;
-
+	private ExecutorService amazonSpiderPool;
+	
 	/**
 	 * Default Constructor 
 	 */
@@ -89,22 +37,6 @@ public class WebScraper {
 		client.waitForBackgroundJavaScript(100000);
 	}
 
-	// handle craigslist portal only
-	public String getNumPages (String keyword, Controller controller) {
-		try {
-			String searchUrl = DEFAULT_URL + "search/sss?sort=rel&query=" + URLEncoder.encode(keyword, "UTF-8");
-			HtmlPage portalPage = client.getPage(searchUrl);
-			HtmlElement lowerBoundRange = (HtmlElement) portalPage.getFirstByXPath("//*[@class='rangeFrom']");
-			HtmlElement upperBoundRange = (HtmlElement) portalPage.getFirstByXPath("//*[@class='rangeTo']");
-			HtmlElement totalItem = (HtmlElement) portalPage.getFirstByXPath("//*[@class='totalcount']");
-			String ret = lowerBoundRange.asText() + " - " + upperBoundRange.asText() + " out of " + totalItem.asText();
-			return ret;
-		} catch (Exception e) {
-			System.out.println(e);
-			return null;
-			}
-	}
-	
 	private static String getTitle(HtmlElement item, String portal) {
 		if (DEBUG) System.out.println("\t DEBUG: entering getTitle method");
 		String xPathAddr = (portal == AMAZON_URL) ? ".//h2[@data-attribute]" : ".//p[@class='result-info']/a";
@@ -115,10 +47,10 @@ public class WebScraper {
 			if (DEBUG) System.out.println("\t DEBUG: NON-ITEM ALERT!!!!");
 			return null;
 		}
-		return itemTitle.asText();		
+		return cleanStr(itemTitle.asText(), "title");
 	}
 
-	// currently for craigslist item
+	// currently for craigslist item, scrape single page
 	private static ArrayList<Item> scrapePage(HtmlPage page) {
 		List<?> items = (List<?>) page.getByXPath("//li[@class='result-row']");
 		ArrayList<Item> craigsArrayList = new ArrayList<Item>();
@@ -148,26 +80,33 @@ public class WebScraper {
 				else {
 					// USE CASE: no price available, but there some offers which contain price
 					if (DEBUG) System.out.println("\t DEBUG: no price available, but there are offers at " + offeredPrice.asText());
-					return new Double(offeredPrice.asText().replaceAll("\\(.*\\)", "").replace("$", "").replace(",", ""));
+					return new Double(cleanStr(offeredPrice.asText().replaceAll("\\(.*\\)", ""), "price"));
 				}
 			} else if (ItemWholePrice.size() > 1 || ItemFractionalPrice.size() > 1) {
-				Double lowPrice = new Double (ItemWholePrice.get(0).asText().replace("$", "").replace(",", "") + "." + ItemFractionalPrice.get(0).asText());
-				Double highPrice = new Double (ItemWholePrice.get(1).asText().replace("$", "").replace(",","") + "." + ItemFractionalPrice.get(1).asText());
+				Double lowPrice = new Double (cleanStr(ItemWholePrice.get(0).asText(), "price") + "." + ItemFractionalPrice.get(0).asText());
+				Double highPrice = new Double (cleanStr(ItemWholePrice.get(1).asText(), "price") + "." + ItemFractionalPrice.get(1).asText());
 				// USE CASE: return average price if the price given is a range
 				return (lowPrice + highPrice) / 2.0;
 			} else { 
 				if (DEBUG) System.out.println("\t DEBUG: GETPRICE FINAL " + ItemWholePrice.size() + " and " + ItemFractionalPrice.size());
-				return new Double (ItemWholePrice.get(0).asText().replace(",", "") + "." + ItemFractionalPrice.get(0).asText()); }
+				return new Double (cleanStr(ItemWholePrice.get(0).asText(), "price") + "." + ItemFractionalPrice.get(0).asText()); }
 		} else {
 			// portal: craigslist
 			HtmlElement itemPrice = ((HtmlElement) item.getFirstByXPath(".//a/span[@class='result-price']"));
 			if (itemPrice == null) 
 				return 0.0;
 			else 
-				return new Double(itemPrice.asText().replace("$", "").replace(",",""));
+				return new Double(cleanStr(itemPrice.asText(), "price"));
 		}
 		}
 
+	private static String cleanStr(String str, String use) {
+		if (use == "price") {
+			return str.replace("$", "").replace(",", "");
+		} else
+			return (str.startsWith("[Sponsored]")) ? str.replace("[Sponsored]", "") : str;
+	}
+	
 	// currently for craigslist portal only
 	private static String getNextPage(HtmlPage page) {
 		HtmlAnchor nextPageUrl = (HtmlAnchor) page.getFirstByXPath("//a[@class='button next']");
@@ -188,8 +127,8 @@ public class WebScraper {
 			portal_url + itemUrl.getHrefAttribute();
 	}
 
+	// currently only for craigslist
 	private static Date getPostedDate(HtmlElement item) {
-		// currently only for craigslist
 		DomAttr itemDate = (DomAttr) item.getFirstByXPath(".//*[@class='result-date']/@datetime");
 		SimpleDateFormat dateFormatting = new SimpleDateFormat("yyyy-MM-dd HH:mm");
 		try { 
@@ -197,8 +136,8 @@ public class WebScraper {
 		} catch (Exception e) { 
 			if (DEBUG) System.out.println("\t DEBUG: postedDate non-existence!!!");
 			return null;
-			}
 		}
+	}
 		
 	private static Vector<Item> sortResult(ArrayList<Item> amazonArrayList, ArrayList<Item> craigsArrayList){
 		if (DEBUG) System.out.println("\t DEBUG: entering getTitle method");
@@ -218,6 +157,29 @@ public class WebScraper {
 		}
 		return result;
 	}
+
+	private ArrayList<Item> deploySpiders(ArrayList<Item> amazonArrayList, Controller controller){
+		try {
+			if (DEBUG) System.out.println("\t DEBUG: Instantiating : " + amazonArrayList.size() + " amazon spiders");
+			amazonSpiderPool = Executors.newFixedThreadPool(amazonArrayList.size());
+			List<Future<Date>> spiders = new ArrayList<Future<Date>>();
+			controller.printConsole("\t Scraping amazon's items page... \n");
+			
+			for (Item amazonItem : amazonArrayList) {
+				Callable<Date> spider = new Spider(amazonItem.getUrl(), amazonItem.getTitle());
+				spiders.add(amazonSpiderPool.submit(spider));
+			}
+			
+			for (int i = 0; i < amazonArrayList.size(); i++) {
+				amazonArrayList.get(i).setPostedDate(spiders.get(i).get());
+			}
+			
+			amazonSpiderPool.shutdown();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return amazonArrayList;
+	}
 	
 	/**
 	 * The only method implemented in this class, to scrape web content from the craigslist
@@ -230,7 +192,7 @@ public class WebScraper {
 			/*
 			 * AMAZON SCRAPER
 			 */
-			controller.printConsole("Scraping amazon... \n"); System.out.println("   DEBUG: scraping amazon...");
+			controller.printConsole("Scraping amazon \n"); System.out.println("   DEBUG: scraping amazon...");
 			String amazonUrl = AMAZON_URL+"s/ref=nb_sb_noss?url=search-alias%3Daps&field-keywords=" + URLEncoder.encode(keyword,"UTF-8");
 			HtmlPage amazonPage = client.getPage(amazonUrl);
 			List<?> amazonResult = (List<?>) amazonPage.getByXPath("//li[starts-with(@id, 'result_')]");
@@ -246,18 +208,20 @@ public class WebScraper {
 				//non-item case
 				if (getTitle(amazonItem, AMAZON_URL) == null) continue;
 				if (DEBUG) System.out.println("\t DEBUG: entering item : " + getTitle(amazonItem, AMAZON_URL));
-
+				
 				Item item = new Item(getTitle(amazonItem, AMAZON_URL), getPrice(amazonItem, AMAZON_URL), getUrl(amazonItem, AMAZON_URL), AMAZON_URL, null);
 				amazonArrayList.add(item);
 				if (DEBUG) System.out.println("\t DEBUG: [amazon] stored item " + i + ": " + item.getPrice() + " HKD. Name: " +item.getTitle());
 			}
 			Collections.sort(amazonArrayList);
+			// retrieve postedDate for amazonItems
+			amazonArrayList = deploySpiders(amazonArrayList, controller);
 			
 			
 			/*
 			 * NEWYORK CRAIGSLIST SCRAPER
 			 */
-			controller.printConsole("Scraping craigslist... \n"); System.out.println("   DEBUG: scraping craigslist...");
+			controller.printConsole("Scraping craigslist \n"); System.out.println("   DEBUG: scraping craigslist...");
 			String searchUrl = DEFAULT_URL + "search/sss?sort=rel&query=" + URLEncoder.encode(keyword, "UTF-8");
 			HtmlPage page = client.getPage(searchUrl);
 			ArrayList<Item> craigsArrayList = new ArrayList<Item>();
@@ -267,26 +231,21 @@ public class WebScraper {
 			do {
 				if (currentPage != 1) 
 					page = client.getPage(getNextPage(page));
-				controller.printConsole("Scraping page " + currentPage + "\n");
+				controller.printConsole("\t Scraping page " + currentPage + "...\n");
 				craigsArrayList.addAll(scrapePage(page));
 				currentPage += 1;
 			} while (getNextPage(page) != null);
 			
 			Collections.sort(craigsArrayList);
-			
-			// append final result to be returned based on sorting
-
 			Vector<Item> result = sortResult(amazonArrayList, craigsArrayList);
-
+			
 			// TODO: delete this line
 			if (DEBUG) for (Item i: result) System.out.println("DEBUG: result " + i.getPrice() + " PORTAL " + i.getPortal());
 			
 			client.close();
-
 			// TODO: delete following line
 			System.out.println("DEBUG: scraping finished");
 			return result;
-
 		} catch (Exception e) {
 			System.out.println(e);
 		}
