@@ -36,8 +36,8 @@ public class WebScraper {
 		client.getOptions().setJavaScriptEnabled(false);
 		client.waitForBackgroundJavaScript(100000);
 	}
-
-	private static String getTitle(HtmlElement item, String portal) {
+	
+	public static String getTitle(HtmlElement item, String portal) {
 		if (DEBUG) System.out.println("\t DEBUG: entering getTitle method");
 		String xPathAddr = (portal == AMAZON_URL) ? ".//h2[@data-attribute]" : ".//p[@class='result-info']/a";
 		HtmlElement itemTitle = (HtmlElement) item.getFirstByXPath(xPathAddr);
@@ -51,7 +51,7 @@ public class WebScraper {
 	}
 
 	// currently for craigslist item, scrape single page
-	private static ArrayList<Item> scrapePage(HtmlPage page) {
+	public static ArrayList<Item> scrapePage(HtmlPage page) {
 		List<?> items = (List<?>) page.getByXPath("//li[@class='result-row']");
 		ArrayList<Item> craigsArrayList = new ArrayList<Item>();
 		for (int i = 0; i < items.size(); i++) {
@@ -63,7 +63,7 @@ public class WebScraper {
 		return craigsArrayList;
 	}
 	
-	private static Double getPrice(HtmlElement item, String portal) {
+	public static Double getPrice(HtmlElement item, String portal) {
 		if (DEBUG) System.out.println("\t DEBUG: entering getPrice method");
 		// return 0.0 if the price is not specified
 		if (portal == AMAZON_URL) {
@@ -92,7 +92,7 @@ public class WebScraper {
 				return new Double (cleanStr(ItemWholePrice.get(0).asText(), "price") + "." + ItemFractionalPrice.get(0).asText()); }
 		} else {
 			// portal: craigslist
-			HtmlElement itemPrice = ((HtmlElement) item.getFirstByXPath(".//a/span[@class='result-price']"));
+			HtmlElement itemPrice = ((HtmlElement) item.getFirstByXPath(".//*[@class='result-price']"));
 			if (itemPrice == null) 
 				return 0.0;
 			else 
