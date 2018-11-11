@@ -38,16 +38,12 @@ public class WebScraper {
 	}
 	
 	public static String getTitle(HtmlElement item, String portal) {
-		if (DEBUG) System.out.println("\t DEBUG: entering getTitle method");
 		String xPathAddr = (portal == AMAZON_URL) ? ".//h2[@data-attribute]" : ".//p[@class='result-info']/a";
 		HtmlElement itemTitle = (HtmlElement) item.getFirstByXPath(xPathAddr);
 		
 		// USE:CASE non-item case, particularly on Amazon portal
-		if (itemTitle == null || itemTitle.asText() == "") {
-			if (DEBUG) System.out.println("\t DEBUG: NON-ITEM ALERT!!!!");
-			return null;
-		}
-		return cleanStr(itemTitle.asText(), "title");
+		// if condition += itemTitle.asText() == ""
+		return (itemTitle == null) ? null : cleanStr(itemTitle.asText(), "title");
 	}
 
 	// currently for craigslist item, scrape single page
@@ -64,7 +60,6 @@ public class WebScraper {
 	}
 	
 	public static Double getPrice(HtmlElement item, String portal) {
-		if (DEBUG) System.out.println("\t DEBUG: entering getPrice method");
 		// return 0.0 if the price is not specified
 		if (portal == AMAZON_URL) {
 			// portal: amazon 
@@ -73,22 +68,20 @@ public class WebScraper {
 			ArrayList<HtmlElement> ItemWholePrice = new ArrayList<HtmlElement> (item.getByXPath(".//*[contains(@class, 'sx-price-whole')]"));
 			ArrayList<HtmlElement> ItemFractionalPrice = new ArrayList<HtmlElement> (item.getByXPath(".//*[contains(@class, 'sx-price-fractional')]"));
 			
-			if (ItemWholePrice == null || ItemFractionalPrice == null || ItemWholePrice.size() == 0 || ItemFractionalPrice.size() == 0) {
+			if (ItemWholePrice.size() == 0 || ItemFractionalPrice.size() == 0) {
 				HtmlElement offeredPrice = (HtmlElement) item.getFirstByXPath(".//*[contains(text(),'offer')]");
 				if (offeredPrice == null) 
 					return 0.0;
 				else {
 					// USE CASE: no price available, but there some offers which contain price
-					if (DEBUG) System.out.println("\t DEBUG: no price available, but there are offers at " + offeredPrice.asText());
 					return new Double(cleanStr(offeredPrice.asText().replaceAll("\\(.*\\)", ""), "price"));
 				}
-			} else if (ItemWholePrice.size() > 1 || ItemFractionalPrice.size() > 1) {
+			} else if (ItemWholePrice.size() > 1 && ItemFractionalPrice.size() > 1) {
 				Double lowPrice = new Double (cleanStr(ItemWholePrice.get(0).asText(), "price") + "." + ItemFractionalPrice.get(0).asText());
 				Double highPrice = new Double (cleanStr(ItemWholePrice.get(1).asText(), "price") + "." + ItemFractionalPrice.get(1).asText());
 				// USE CASE: return average price if the price given is a range
 				return (lowPrice + highPrice) / 2.0;
 			} else { 
-				if (DEBUG) System.out.println("\t DEBUG: GETPRICE FINAL " + ItemWholePrice.size() + " and " + ItemFractionalPrice.size());
 				return new Double (cleanStr(ItemWholePrice.get(0).asText(), "price") + "." + ItemFractionalPrice.get(0).asText()); }
 		} else {
 			// portal: craigslist
@@ -100,26 +93,25 @@ public class WebScraper {
 		}
 		}
 
-	private static String cleanStr(String str, String use) {
+	
+	public static String cleanStr(String str, String use) {
 		if (use == "price") {
 			return str.replace("$", "").replace(",", "");
 		} else
 			return (str.startsWith("[Sponsored]")) ? str.replace("[Sponsored]", "") : str;
 	}
 	
-	// currently for craigslist portal only
-	private static String getNextPage(HtmlPage page) {
+	//currently only for craigslist
+	public static String getNextPage(HtmlPage page) {
 		HtmlAnchor nextPageUrl = (HtmlAnchor) page.getFirstByXPath("//a[@class='button next']");
-		if (nextPageUrl == null) {
-			if (DEBUG) System.out.println("\t DEBUG: there aren't any next page!");
+		if (nextPageUrl.getHrefAttribute().length() == 0) {
 			return null;
 		} else 
 			return (nextPageUrl.getHrefAttribute().startsWith(DEFAULT_URL)) ? nextPageUrl.getHrefAttribute() :
 				DEFAULT_URL + nextPageUrl.getHrefAttribute();
 	}
 	
-	private static String getUrl(HtmlElement item, String portal) {
-		if (DEBUG) System.out.println("\t DEBUG: entering getUrl method");
+	public static String getUrl(HtmlElement item, String portal) {
 		String portal_url = (portal == AMAZON_URL) ? AMAZON_URL : DEFAULT_URL;
 		String xPathAddr = (portal == AMAZON_URL) ? ".//h2[@data-attribute]/parent::a" : ".//p[@class='result-info']/a";
 		HtmlAnchor itemUrl = (HtmlAnchor) item.getFirstByXPath(xPathAddr);
@@ -128,13 +120,12 @@ public class WebScraper {
 	}
 
 	// currently only for craigslist
-	private static Date getPostedDate(HtmlElement item) {
-		DomAttr itemDate = (DomAttr) item.getFirstByXPath(".//*[@class='result-date']/@datetime");
-		SimpleDateFormat dateFormatting = new SimpleDateFormat("yyyy-MM-dd HH:mm");
-		try { 
+	public static Date getPostedDate(HtmlElement item){
+		try {
+			DomAttr itemDate = (DomAttr) item.getFirstByXPath(".//*[@class='result-date']/@datetime");
+			SimpleDateFormat dateFormatting = new SimpleDateFormat("yyyy-MM-dd HH:mm");
 			return dateFormatting.parse(itemDate.getValue()); 
-		} catch (Exception e) { 
-			if (DEBUG) System.out.println("\t DEBUG: postedDate non-existence!!!");
+		} catch (Exception e) {
 			return null;
 		}
 	}

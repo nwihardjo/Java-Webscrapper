@@ -66,12 +66,8 @@ public class Spider implements Callable<Date> {
 	@Override
 	public Date call() {
 		HtmlPage page = this.getPage();
-		List<HtmlElement> containPostedDate = page.getByXPath("//*[contains(@class, 'prodDetSectionEntry')]");
-		if (containPostedDate == null || containPostedDate.isEmpty()) 
-			// USE-CASE: check whether scraped item is a service
-			return (scrapeService(page) != null) ? scrapeService(page) : null;
-		else 
-			return (getDate(containPostedDate) != null) ? getDate(containPostedDate) : null;
+		List<HtmlElement> containPostedDate = page.getByXPath("//*[contains(@class, 'prodDetSectionEntry')]");		
+		// USE-CASE: check whether scraped item is a service
+		return (containPostedDate == null || containPostedDate.isEmpty()) ? scrapeService(page) : getDate(containPostedDate);
 	}
-
 }
