@@ -85,6 +85,20 @@ public class Controller {
     }
 
     /**
+     * Called when the new button is pressed. Very dummy action - print something in the command prompt.
+     */
+    @FXML
+    private void actionNew() {
+        System.out.println("actionNew");
+    }
+
+    @FXML
+    private void displaySummary(Event event) {
+        System.out.println("Summary tab selected");
+    }
+
+
+    /**
      * Called when the search button is pressed.
      */
     @FXML
@@ -100,9 +114,9 @@ public class Controller {
     		textAreaConsole.clear();
     		printConsole(output); 
     		scraperResult = result;
-//    		refreshSummaryTab();
-//    		togglePrimarySearch();
-//    		toggleRefineSearch();
+    		refreshSummaryTab();
+    		togglePrimarySearch();
+    		toggleRefineSearch();
     	});
     	thread.start();
     }
@@ -131,12 +145,33 @@ public class Controller {
         }
 //        System.out.println("DEBUG: After refining, count is: " + scraperResult.size());
 //        System.out.println("DEBUG: After refining, the following items are");
-        for (Item item : scraperResult) {
-            System.out.println(item.getTitle());
-        }
+//        for (Item item : scraperResult) {
+//            System.out.println(item.getTitle());
+//        }
+        textAreaConsole.clear();
         refreshSummaryTab();
         togglePrimarySearch();
         toggleRefineSearch();
+        printOutputToConsole();
+    }
+
+    private void refreshSummaryTab() {
+        if (Platform.isFxApplicationThread()) {
+            updateSummaryDetails();
+        }
+        else {
+            Platform.runLater(() -> updateSummaryDetails());
+        }
+    }
+
+    private void updateSummaryDetails() {
+        int itemCount = getItemCount();
+        double avgPrice = getAvgPrice();
+        double lowestPrice = getLowestPrice();
+        setLabelCount(itemCount);
+        setLabelPrice(avgPrice);
+        setLabelMin(lowestPrice);
+        setLabelLatest();
     }
 
     private void togglePrimarySearch() {
@@ -161,28 +196,13 @@ public class Controller {
             refineButton.setDisable(true);
         }
     }
-    
-    /**
-     * Called when the new button is pressed. Very dummy action - print something in the command prompt.
-     */
-    @FXML
-    private void actionNew() {
-        System.out.println("actionNew");
-    }
 
-    @FXML
-    private void displaySummary(Event event) {
-        System.out.println("Summary tab selected");
-    }
-
-    private void refreshSummaryTab() {
-        int itemCount = getItemCount();
-        double avgPrice = getAvgPrice();
-        double lowestPrice = getLowestPrice();
-        setLabelCount(itemCount);
-        setLabelPrice(avgPrice);
-        setLabelMin(lowestPrice);
-        setLabelLatest();
+    private void printOutputToConsole() {
+        String output = "";
+        for (Item item : scraperResult) {
+            output += item.getTitle() + "\t" + item.getPrice() + "\t" + item.getUrl() + "\n";
+        }
+        printConsole(output);
     }
 
     private int getItemCount() {
