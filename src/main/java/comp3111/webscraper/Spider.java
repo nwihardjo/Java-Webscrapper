@@ -67,9 +67,9 @@ public class Spider implements Callable<Date> {
 		HtmlPage page = this.getPage();
 		// normal item case
 		List<HtmlElement> iDate = page.getByXPath("//*[contains(text(), 'Date')]/following-sibling::span");
-		List<HtmlElement> uDate = page.getByXPath("//*[contains(text(), 'Date First Available')]/following-sibling::td");
+		List<HtmlElement> uDate = page.getByXPath("//*[contains(text(), 'Date')]/following-sibling::td");
 		List<HtmlElement> containPostedDate = page.getByXPath("//*[contains(@class, 'prodDetSectionEntry')]");		
-		if (!iDate.isEmpty() && iDate.get(0).asText() == "")
+		if (!iDate.isEmpty() && iDate.get(0).asText().length() != 0)
 			System.out.println("\t DEBUG: LINK : " + this.Url + "\n\t DEBUG: spider normal case date : " + iDate.get(0).asText() + " [out of " + iDate.size() + " items]");
 		else if (!uDate.isEmpty())
 			System.out.println("\t DEBUG: LINK : " + this.Url + "\n\t DEBUG: spider lockpick case date: " + uDate.get(0).asText() + " [out of " + uDate.size() + " items]");
