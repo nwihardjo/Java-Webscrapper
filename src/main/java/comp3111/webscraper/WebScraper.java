@@ -130,11 +130,15 @@ public class WebScraper {
 		}
 	}
 		
-	private static Vector<Item> sortResult(ArrayList<Item> amazonArrayList, ArrayList<Item> craigsArrayList){
-		if (DEBUG) System.out.println("\t DEBUG: entering getTitle method");
-		Vector<Item> result = new Vector<Item>();
+	public static Vector<Item> sortResult(ArrayList<Item> amazonArrayList, ArrayList<Item> craigsArrayList){
 		// sort ascending, for the same price, craigslist item goes first
-		for (int i=0, j=0; !amazonArrayList.isEmpty() && !craigsArrayList.isEmpty();) {
+		if (amazonArrayList.isEmpty() && !craigsArrayList.isEmpty())
+			return new Vector<Item>(craigsArrayList);
+		else if (craigsArrayList.isEmpty() && !amazonArrayList.isEmpty())
+			return new Vector<Item>(amazonArrayList);
+		else {
+		Vector<Item> result = new Vector<Item>();
+		for (int i=0, j=0; !amazonArrayList.isEmpty() || !craigsArrayList.isEmpty();) {
 			if (amazonArrayList.isEmpty()) 
 				result.add(craigsArrayList.remove(j));
 			else if (craigsArrayList.isEmpty()) 
@@ -147,24 +151,24 @@ public class WebScraper {
 				result.add(craigsArrayList.remove(j));
 		}
 		return result;
+		}
 	}
 
-	private ArrayList<Item> deploySpiders(ArrayList<Item> amazonArrayList, Controller controller){
+	public ArrayList<Item> deploySpiders(ArrayList<Item> amazonArrayList){
 		try {
-			if (DEBUG) System.out.println("\t DEBUG: Instantiating : " + amazonArrayList.size() + " amazon spiders");
 			amazonSpiderPool = Executors.newFixedThreadPool(amazonArrayList.size());
 			List<Future<Date>> spiders = new ArrayList<Future<Date>>();
-			controller.printConsole("\t Scraping amazon's items page... \n");
-			
+			System.out.println("URL " + amazonArrayList.get(0).getUrl());
+			System.out.println("DEBUG HERE");
 			for (Item amazonItem : amazonArrayList) {
 				Callable<Date> spider = new Spider(amazonItem.getUrl(), amazonItem.getTitle());
 				spiders.add(amazonSpiderPool.submit(spider));
 			}
-			
+			System.out.println("DEBUG NEXT HERE");
 			for (int i = 0; i < amazonArrayList.size(); i++) {
 				amazonArrayList.get(i).setPostedDate(spiders.get(i).get());
 			}
-			
+			System.out.println(amazonArrayList.get(0).getPostedDate());
 			amazonSpiderPool.shutdown();
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -206,7 +210,8 @@ public class WebScraper {
 			}
 			Collections.sort(amazonArrayList);
 			// retrieve postedDate for amazonItems
-			amazonArrayList = deploySpiders(amazonArrayList, controller);
+			controller.printConsole("\t Scraping amazon's items page... \n");	
+			amazonArrayList = deploySpiders(amazonArrayList);
 			
 			
 			/*

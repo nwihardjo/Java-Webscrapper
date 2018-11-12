@@ -31,7 +31,6 @@ public class Spider implements Callable<Date> {
 			client.close();
 			return page;
 		} catch (Exception e) {
-			System.out.println("\t DEBUG: spiders couldn't retrieve page");
 			e.printStackTrace();
 			return null;
 		}
@@ -46,14 +45,14 @@ public class Spider implements Callable<Date> {
 			return null;
 	}
 	
-	private Date getDate(List<HtmlElement> containPostedDate) {
+	public Date getDate(List<HtmlElement> containPostedDate) {
 		// retrieve the date of the posted item, if any
 		HtmlElement postedDate = (HtmlElement) containPostedDate.get(containPostedDate.size() - 1).getFirstByXPath("./following-sibling::td");
 		// return null if contains no date
 		return (postedDate != null && postedDate.asText() != "") ? parseDate(postedDate.asText()) : null;
 	}
 	
-	private Date parseDate(String strDate) {
+	public Date parseDate(String strDate) {
 		// System.out.println("\t DEBUG: parsing item " + this.title + " with argument passed : " + strDate);
 		SimpleDateFormat format = new SimpleDateFormat("MMMM dd, yyyy");
 		try {
@@ -66,7 +65,18 @@ public class Spider implements Callable<Date> {
 	@Override
 	public Date call() {
 		HtmlPage page = this.getPage();
+		// normal item case
+		List<HtmlElement> iDate = page.getByXPath("//*[contains(text(), 'Date')]/following-sibling::span");
+		List<HtmlElement> uDate = page.getByXPath("//*[contains(text(), 'Date First Available')]/following-sibling::td");
 		List<HtmlElement> containPostedDate = page.getByXPath("//*[contains(@class, 'prodDetSectionEntry')]");		
+		if (!iDate.isEmpty() && iDate.get(0).asText() == "")
+			System.out.println("\t DEBUG: LINK : " + this.Url + "\n\t DEBUG: spider normal case date : " + iDate.get(0).asText() + " [out of " + iDate.size() + " items]");
+		else if (!uDate.isEmpty())
+			System.out.println("\t DEBUG: LINK : " + this.Url + "\n\t DEBUG: spider lockpick case date: " + uDate.get(0).asText() + " [out of " + uDate.size() + " items]");
+		else
+			System.out.println("\t DEBUG: LINK : " + this.Url + "\n\t DEBUG: spider service case date: " + scrapeService(page));
+//		System.out.println("\t DEBUG: spider contain on date first listed: " + iDate.size() + " " + iDate.get(0).asText());
+//		List<HtmlElement> containPostedDate = page.getByXPath("//*[contains(@class, 'prodDetSectionEntry')]");		
 		// USE-CASE: check whether scraped item is a service
 		return (containPostedDate == null || containPostedDate.isEmpty()) ? scrapeService(page) : getDate(containPostedDate);
 	}

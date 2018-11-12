@@ -14,6 +14,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Vector;
 
 public class WebScraperTest{
 	private static String dir_;
@@ -24,7 +25,7 @@ public class WebScraperTest{
 	
 	@BeforeClass
 	public static void init() {
-		dir_ = "file://" + System.getProperty("user.dir");
+		dir_ = "file://" + System.getProperty("user.dir") + "/unitTest_pages";
 		craigsClient = new WebClient();
 		craigsClient.getOptions().setCssEnabled(false);
 		craigsClient.getOptions().setJavaScriptEnabled(false);
@@ -104,6 +105,19 @@ public class WebScraperTest{
 		completeUrl = "https://www.amazon.com/gp/slredirect/picassoRedirect.html/ref=pa_sp_atf_aps_sr_pg1_2?ie=UTF8&adId=A00605332KNDUPPHXC2MZ&url=https%3A%2F%2Fwww.amazon.com%2FAmazon-Essentials-6-Pack-Quick-Dry-Low-Cut%2Fdp%2FB01JPF63AG%2Fref%3Dsr_1_2_sspa%3Fie%3DUTF8%26qid%3D1541952815%26sr%3D8-2-spons%26keywords%3Dsocks%26psc%3D1&qualifier=1541952815&id=3179112557127668&widgetName=sp_atf";
 		assertEquals(incompleteItemUrl, completeUrl);
 	}
+
+	@Test
+	public void amazonSpidersDeployment() throws Exception{
+		ArrayList<Item> amazonItem = new ArrayList<Item>();
+		amazonItem.add(new Item("Fruit of the Loom...", 16.99, dir_ + "/amazonItem.html", AMAZON, null));
+		amazonItem.add(new Item("temp", 0.0, dir_ + "/amazonLockpick.html", AMAZON, null));
+		amazonItem.add(new Item("tempService", 0.0, dir_ + "/amazonService.html", AMAZON, null));
+		WebScraper scraper = new WebScraper();
+		
+//		Spider spider = new Spider(amazonItem.get(0).getUrl(), amazonItem.get(0).getTitle());
+		amazonItem = scraper.deploySpiders(amazonItem);
+//		assertEquals(amazonItem.get(0).getPostedDate(), spider.parseDate("April 17, 2014"));
+	}
 	
 	@Test
 	public void craigsTitle() throws Exception{
@@ -180,6 +194,42 @@ public class WebScraperTest{
 		HtmlPage craigsPage = craigsClient.getPage(dir_ + "/craigslist0.html");
 		ArrayList<Item> craigsAL = WebScraper.scrapePage(craigsPage);
 		assertEquals(craigsAL.size(), 120);
+	}
+
+	@Test
+	public void resultSorting() throws Exception{
+		ArrayList<Item> amazonItems = new ArrayList<Item>();
+		ArrayList<Item> craigsItems = new ArrayList<Item>();		
+		// both arrayLists empty
+		assertEquals(WebScraper.sortResult(amazonItems, craigsItems), new Vector<Item>());
+		
+		// empty craigsArrayList --> none of the arraylist items were removed
+		Item addItem = new Item("temp", 0.0, "temp", AMAZON, null);
+		amazonItems.add(addItem);
+		assertEquals(WebScraper.sortResult(amazonItems, craigsItems).size(), 1);
+		
+		// size craigslist > size amazonlist --> items in the arraylist were removed
+		craigsItems.add(addItem);
+		craigsItems.add(new Item("temp", 10.0, "temp", DEFAULT, null));
+		assertEquals(WebScraper.sortResult(amazonItems,  craigsItems).size(), 3);
+		
+		// empty amazonArrayList --> none of the arraylist items were removed
+		craigsItems.add(addItem);
+		assertEquals(WebScraper.sortResult(amazonItems, craigsItems).size(), 1);
+		
+		// craigslist more item with different price --> items in the arraylist were removed
+		for (int i = 0; i < 2; i ++) {
+			amazonItems.add(new Item("temp"+i, Math.sqrt(new Double(i)), "temp", AMAZON, null));
+			craigsItems.add(new Item("temp"+i+i, new Double(Math.pow(i, 3)), "temp", DEFAULT, null));
+		}
+		assertEquals(WebScraper.sortResult(amazonItems, craigsItems).size(), 5);
+		
+		// craigslist price < amazon's --> items in the arraylist were removed
+		craigsItems.add(addItem);
+		amazonItems.add(new Item("temp", 1000.0, "temp", AMAZON, null));
+		assertEquals(WebScraper.sortResult(amazonItems, craigsItems).size(), 2);
+		
+		//TODO: generate same double price for 100% branch coverage
 	}
 	
 	@AfterClass
