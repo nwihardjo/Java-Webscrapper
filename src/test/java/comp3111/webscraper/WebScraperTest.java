@@ -178,8 +178,6 @@ public class WebScraperTest{
 	@Test
 	public void craigsScrapePage() throws Exception{
 		HtmlPage craigsPage = craigsClient.getPage(dir_ + "/craigslist0.html");
-		List<?> craigsItems = (List<?>) craigsPage.getByXPath("//li[@class='result-row']");	
-
 		ArrayList<Item> craigsAL = WebScraper.scrapePage(craigsPage);
 		assertEquals(craigsAL.size(), 120);
 	}
