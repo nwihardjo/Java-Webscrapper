@@ -2,6 +2,12 @@ package comp3111.webscraper;
 
 import java.util.Date;
 
+/**
+ * 
+ * @author nwihardjo
+ *
+ */
+
 public class Item implements Comparable <Item> {
 	private String title ; 
 	// price in USD
@@ -20,10 +26,10 @@ public class Item implements Comparable <Item> {
 	
 	public Item() {}
 	
-	
 	public Date getPostedDate() {
 		return postedDate;
 	}
+
 	public void setPostedDate(Date postedDate) {
 		this.postedDate = postedDate;
 	}
