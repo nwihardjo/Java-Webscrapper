@@ -108,9 +108,13 @@ public class Controller {
     		System.out.println("actionSearch: " + textFieldKeyword.getText());
     		List<Item> result = scraper.scrape(textFieldKeyword.getText(), this);
     		String output = "";
-    		for (Item item : result) {
-    			output += item.getTitle() + "\t" + item.getPrice() + "\t" + item.getUrl() + "\n";
-    		}	
+    		
+    		// prevent thrown exception when there's no result
+    		if (result != null) {
+	    		for (Item item : result) {
+	    			output += item.getTitle() + "\t" + item.getPrice() + "\t" + item.getUrl() + "\n";
+	    		}
+    		}
     		textAreaConsole.clear();
     		printConsole(output); 
     		scraperResult = result;
