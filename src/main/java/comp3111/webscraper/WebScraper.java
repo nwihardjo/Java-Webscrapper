@@ -36,22 +36,18 @@ public class WebScraper {
 		client.getOptions().setJavaScriptEnabled(false);
 		client.waitForBackgroundJavaScript(100000);
 	}
-
-	private static String getTitle(HtmlElement item, String portal) {
-		if (DEBUG) System.out.println("\t DEBUG: entering getTitle method");
+	
+	public static String getTitle(HtmlElement item, String portal) {
 		String xPathAddr = (portal == AMAZON_URL) ? ".//h2[@data-attribute]" : ".//p[@class='result-info']/a";
 		HtmlElement itemTitle = (HtmlElement) item.getFirstByXPath(xPathAddr);
 		
 		// USE:CASE non-item case, particularly on Amazon portal
-		if (itemTitle == null || itemTitle.asText() == "") {
-			if (DEBUG) System.out.println("\t DEBUG: NON-ITEM ALERT!!!!");
-			return null;
-		}
-		return cleanStr(itemTitle.asText(), "title");
+		// if condition += itemTitle.asText() == ""
+		return (itemTitle == null) ? null : cleanStr(itemTitle.asText(), "title");
 	}
 
 	// currently for craigslist item, scrape single page
-	private static ArrayList<Item> scrapePage(HtmlPage page) {
+	public static ArrayList<Item> scrapePage(HtmlPage page) {
 		List<?> items = (List<?>) page.getByXPath("//li[@class='result-row']");
 		ArrayList<Item> craigsArrayList = new ArrayList<Item>();
 		for (int i = 0; i < items.size(); i++) {
@@ -63,8 +59,7 @@ public class WebScraper {
 		return craigsArrayList;
 	}
 	
-	private static Double getPrice(HtmlElement item, String portal) {
-		if (DEBUG) System.out.println("\t DEBUG: entering getPrice method");
+	public static Double getPrice(HtmlElement item, String portal) {
 		// return 0.0 if the price is not specified
 		if (portal == AMAZON_URL) {
 			// portal: amazon 
@@ -73,26 +68,24 @@ public class WebScraper {
 			ArrayList<HtmlElement> ItemWholePrice = new ArrayList<HtmlElement> (item.getByXPath(".//*[contains(@class, 'sx-price-whole')]"));
 			ArrayList<HtmlElement> ItemFractionalPrice = new ArrayList<HtmlElement> (item.getByXPath(".//*[contains(@class, 'sx-price-fractional')]"));
 			
-			if (ItemWholePrice == null || ItemFractionalPrice == null || ItemWholePrice.size() == 0 || ItemFractionalPrice.size() == 0) {
+			if (ItemWholePrice.size() == 0 || ItemFractionalPrice.size() == 0) {
 				HtmlElement offeredPrice = (HtmlElement) item.getFirstByXPath(".//*[contains(text(),'offer')]");
 				if (offeredPrice == null) 
 					return 0.0;
 				else {
 					// USE CASE: no price available, but there some offers which contain price
-					if (DEBUG) System.out.println("\t DEBUG: no price available, but there are offers at " + offeredPrice.asText());
 					return new Double(cleanStr(offeredPrice.asText().replaceAll("\\(.*\\)", ""), "price"));
 				}
-			} else if (ItemWholePrice.size() > 1 || ItemFractionalPrice.size() > 1) {
+			} else if (ItemWholePrice.size() > 1 && ItemFractionalPrice.size() > 1) {
 				Double lowPrice = new Double (cleanStr(ItemWholePrice.get(0).asText(), "price") + "." + ItemFractionalPrice.get(0).asText());
 				Double highPrice = new Double (cleanStr(ItemWholePrice.get(1).asText(), "price") + "." + ItemFractionalPrice.get(1).asText());
 				// USE CASE: return average price if the price given is a range
 				return (lowPrice + highPrice) / 2.0;
 			} else { 
-				if (DEBUG) System.out.println("\t DEBUG: GETPRICE FINAL " + ItemWholePrice.size() + " and " + ItemFractionalPrice.size());
 				return new Double (cleanStr(ItemWholePrice.get(0).asText(), "price") + "." + ItemFractionalPrice.get(0).asText()); }
 		} else {
 			// portal: craigslist
-			HtmlElement itemPrice = ((HtmlElement) item.getFirstByXPath(".//a/span[@class='result-price']"));
+			HtmlElement itemPrice = ((HtmlElement) item.getFirstByXPath(".//*[@class='result-price']"));
 			if (itemPrice == null) 
 				return 0.0;
 			else 
@@ -100,26 +93,25 @@ public class WebScraper {
 		}
 		}
 
-	private static String cleanStr(String str, String use) {
+	
+	public static String cleanStr(String str, String use) {
 		if (use == "price") {
 			return str.replace("$", "").replace(",", "");
 		} else
 			return (str.startsWith("[Sponsored]")) ? str.replace("[Sponsored]", "") : str;
 	}
 	
-	// currently for craigslist portal only
-	private static String getNextPage(HtmlPage page) {
+	//currently only for craigslist
+	public static String getNextPage(HtmlPage page) {
 		HtmlAnchor nextPageUrl = (HtmlAnchor) page.getFirstByXPath("//a[@class='button next']");
-		if (nextPageUrl == null) {
-			if (DEBUG) System.out.println("\t DEBUG: there aren't any next page!");
+		if (nextPageUrl.getHrefAttribute().length() == 0) {
 			return null;
 		} else 
 			return (nextPageUrl.getHrefAttribute().startsWith(DEFAULT_URL)) ? nextPageUrl.getHrefAttribute() :
 				DEFAULT_URL + nextPageUrl.getHrefAttribute();
 	}
 	
-	private static String getUrl(HtmlElement item, String portal) {
-		if (DEBUG) System.out.println("\t DEBUG: entering getUrl method");
+	public static String getUrl(HtmlElement item, String portal) {
 		String portal_url = (portal == AMAZON_URL) ? AMAZON_URL : DEFAULT_URL;
 		String xPathAddr = (portal == AMAZON_URL) ? ".//h2[@data-attribute]/parent::a" : ".//p[@class='result-info']/a";
 		HtmlAnchor itemUrl = (HtmlAnchor) item.getFirstByXPath(xPathAddr);
@@ -128,52 +120,51 @@ public class WebScraper {
 	}
 
 	// currently only for craigslist
-	private static Date getPostedDate(HtmlElement item) {
-		DomAttr itemDate = (DomAttr) item.getFirstByXPath(".//*[@class='result-date']/@datetime");
-		SimpleDateFormat dateFormatting = new SimpleDateFormat("yyyy-MM-dd HH:mm");
-		try { 
+	public static Date getPostedDate(HtmlElement item){
+		try {
+			DomAttr itemDate = (DomAttr) item.getFirstByXPath(".//*[@class='result-date']/@datetime");
+			SimpleDateFormat dateFormatting = new SimpleDateFormat("yyyy-MM-dd HH:mm");
 			return dateFormatting.parse(itemDate.getValue()); 
-		} catch (Exception e) { 
-			if (DEBUG) System.out.println("\t DEBUG: postedDate non-existence!!!");
+		} catch (Exception e) {
 			return null;
 		}
 	}
 		
-	private static Vector<Item> sortResult(ArrayList<Item> amazonArrayList, ArrayList<Item> craigsArrayList){
-		if (DEBUG) System.out.println("\t DEBUG: entering getTitle method");
-		Vector<Item> result = new Vector<Item>();
+	public static Vector<Item> sortResult(ArrayList<Item> amazonArrayList, ArrayList<Item> craigsArrayList){
 		// sort ascending, for the same price, craigslist item goes first
-		for (int i=0, j=0; !amazonArrayList.isEmpty() && !craigsArrayList.isEmpty();) {
-			if (amazonArrayList.isEmpty()) 
-				result.add(craigsArrayList.remove(j));
-			else if (craigsArrayList.isEmpty()) 
-				result.add(amazonArrayList.remove(i));
-			else if (craigsArrayList.get(j).getPrice() > amazonArrayList.get(i).getPrice()) 
-				result.add(amazonArrayList.remove(i));
-			else if (craigsArrayList.get(j).getPrice() < amazonArrayList.get(i).getPrice()) 
-				result.add(craigsArrayList.remove(j));
-			else if (craigsArrayList.get(j).getPrice() == amazonArrayList.get(i).getPrice())
-				result.add(craigsArrayList.remove(j));
+		if (amazonArrayList.isEmpty() && !craigsArrayList.isEmpty())
+			return new Vector<Item>(craigsArrayList);
+		else if (craigsArrayList.isEmpty() && !amazonArrayList.isEmpty())
+			return new Vector<Item>(amazonArrayList);
+		else {
+			Vector<Item> result = new Vector<Item>();
+			for (int i=0, j=0; !amazonArrayList.isEmpty() || !craigsArrayList.isEmpty();) {
+				if (amazonArrayList.isEmpty()) 
+					result.add(craigsArrayList.remove(j));
+				else if (craigsArrayList.isEmpty()) 
+					result.add(amazonArrayList.remove(i));
+				else if (craigsArrayList.get(j).getPrice() > amazonArrayList.get(i).getPrice()) 
+					result.add(amazonArrayList.remove(i));
+				else if (craigsArrayList.get(j).getPrice() < amazonArrayList.get(i).getPrice()) 
+					result.add(craigsArrayList.remove(j));
+				else if (craigsArrayList.get(j).getPrice() == amazonArrayList.get(i).getPrice())
+					result.add(craigsArrayList.remove(j));
+			}
+			return result;
 		}
-		return result;
 	}
 
-	private ArrayList<Item> deploySpiders(ArrayList<Item> amazonArrayList, Controller controller){
+	public ArrayList<Item> deploySpiders(ArrayList<Item> amazonArrayList){
 		try {
-			if (DEBUG) System.out.println("\t DEBUG: Instantiating : " + amazonArrayList.size() + " amazon spiders");
 			amazonSpiderPool = Executors.newFixedThreadPool(amazonArrayList.size());
 			List<Future<Date>> spiders = new ArrayList<Future<Date>>();
-			controller.printConsole("\t Scraping amazon's items page... \n");
-			
 			for (Item amazonItem : amazonArrayList) {
 				Callable<Date> spider = new Spider(amazonItem.getUrl(), amazonItem.getTitle());
 				spiders.add(amazonSpiderPool.submit(spider));
 			}
-			
 			for (int i = 0; i < amazonArrayList.size(); i++) {
 				amazonArrayList.get(i).setPostedDate(spiders.get(i).get());
 			}
-			
 			amazonSpiderPool.shutdown();
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -215,7 +206,8 @@ public class WebScraper {
 			}
 			Collections.sort(amazonArrayList);
 			// retrieve postedDate for amazonItems
-			amazonArrayList = deploySpiders(amazonArrayList, controller);
+			controller.printConsole("\t Scraping amazon's items page... \n");	
+			amazonArrayList = deploySpiders(amazonArrayList);
 			
 			
 			/*
