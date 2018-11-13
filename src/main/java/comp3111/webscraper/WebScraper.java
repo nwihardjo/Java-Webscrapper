@@ -128,7 +128,6 @@ public class WebScraper {
 				return new Double(cleanStr(itemPrice.asText(), "price"));
 		}
 		}
-
 	
 	/**
 	 * Clean or parse string based on the usage (for title or price) 
@@ -153,7 +152,7 @@ public class WebScraper {
 	 */
 	public static String getNextPage(HtmlPage page) {
 		HtmlAnchor nextPageUrl = (HtmlAnchor) page.getFirstByXPath("//a[@class='button next']");
-		if (nextPageUrl.getHrefAttribute().length() == 0) {
+		if (nextPageUrl == null || nextPageUrl.getHrefAttribute().length() == 0) {
 			return null;
 		} else 
 			return (nextPageUrl.getHrefAttribute().startsWith(DEFAULT_URL)) ? nextPageUrl.getHrefAttribute() :
@@ -254,6 +253,32 @@ public class WebScraper {
 			return amazonArrayList;
 		}
 	}
+
+	// currently only for criaglist
+	public ArrayList<Item> handlePagination(HtmlPage page, Controller controller){
+		ArrayList<Item> craigsArrayList = new ArrayList<Item>();
+		int currentPage = 1;
+		try {
+			System.out.println("\t DEBUG: entering do loop");
+			do {
+				System.out.println("\t DEBUG: before if ");
+				if (currentPage != 1) 
+					page = client.getPage(getNextPage(page));
+//				controller.printConsole("\t Scraping page " + currentPage + "...\n");
+				System.out.println("\t DEBUG: error before addAdll");
+				craigsArrayList.addAll(scrapePage(page));
+				System.out.println("\t DEBUG: error after addAll");
+				currentPage += 1;
+				System.out.println("\t DEBUG: " + getNextPage(page));
+			} while (getNextPage(page) != null);
+		} catch (Exception e) {
+			System.out.println("\t DEBUG: handlePagination method caught exception");
+			e.printStackTrace();
+			return null;
+		}
+		
+		return craigsArrayList;
+	}
 	
 	/**
 	 * Method to manage the workflow of scraping both portals based on the keyword specified. Handle amazon portal first, then the 
@@ -310,7 +335,7 @@ public class WebScraper {
 			} while (getNextPage(page) != null);
 			
 			Vector<Item> result = sortResult(amazonArrayList, craigsArrayList);
-			
+			 
 			client.close();
 			System.out.println("DEBUG: scraping finished");
 			return result;

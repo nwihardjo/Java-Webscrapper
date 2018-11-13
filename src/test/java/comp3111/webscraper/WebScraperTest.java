@@ -206,6 +206,16 @@ public class WebScraperTest{
 	}
 
 	@Test
+	public void craigsPagination() throws Exception{
+		HtmlPage craigsPage = craigsClient.getPage(dir_ + "/craigslistEmpty.html");
+		WebScraper scraper = new WebScraper();
+		Controller controller = new Controller();
+		
+		ArrayList<Item> craigsItems = scraper.handlePagination(craigsPage, controller);
+		assertEquals(craigsItems.size(), 0);
+	}
+	
+	@Test
 	public void resultSorting() throws Exception{
 		ArrayList<Item> amazonItems = new ArrayList<Item>();
 		ArrayList<Item> craigsItems = new ArrayList<Item>();		
@@ -244,11 +254,12 @@ public class WebScraperTest{
 	@Test
 	public void scrapeTesting() throws Exception{
 		WebScraper scraper = new WebScraper();
-		Controller controller = new Controller();
-		assertNull(scraper.scrape("-", controller));
+		Controller dummyController = new Controller();
+		assertNull(scraper.scrape("-", dummyController));
 	}
 
 	@Test
+	// TODO: DELETE UPON SUBMISSION
 	public void randomTesting() throws Exception{
 		ArrayList<Item> a_ = new ArrayList<Item>();
 		ArrayList<Item> b_ = new ArrayList<Item>();
