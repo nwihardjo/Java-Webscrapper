@@ -4,12 +4,9 @@ import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import com.gargoylesoftware.htmlunit.WebClient;
-import com.gargoylesoftware.htmlunit.html.HtmlAnchor;
 import com.gargoylesoftware.htmlunit.html.HtmlElement;
 import com.gargoylesoftware.htmlunit.html.HtmlPage;
 import static org.junit.Assert.*;
-import java.io.IOException;
-import java.net.MalformedURLException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -110,18 +107,22 @@ public class WebScraperTest{
 	public void amazonSpidersDeployment() throws Exception{
 		ArrayList<Item> amazonItems = new ArrayList<Item>();
 		WebScraper scraper = new WebScraper();
+		Spider spider = new Spider("temp");
+		
 		amazonItems.add(new Item("temp", 16.99, dir_ + "/amazonItem.html", AMAZON, null));
 		amazonItems.add(new Item("temp", 0.0, dir_ + "/amazonLockpick.html", AMAZON, null));
+		
+		// normal use case
+		amazonItems = scraper.deploySpiders(amazonItems);
+		assertEquals(amazonItems.get(0).getPostedDate(), spider.parseDate("April 17, 2014"));
+		assertEquals(amazonItems.get(1).getPostedDate(), spider.parseDate("November 21, 2015"));
+		
 		amazonItems.add(new Item("temp", 0.0, dir_ + "/amazonService.html", AMAZON, null));
 		amazonItems.add(new Item("temp", 0.0, dir_ + "/amazonNoDate.html", AMAZON, null));
 		amazonItems.add(new Item("temp", 0.0, "temp", AMAZON, null));
-		Spider spider = new Spider("temp", "temp");
-		
 		
 		amazonItems = scraper.deploySpiders(amazonItems);
 		// test 3 different cases / html layout
-		assertEquals(amazonItems.get(0).getPostedDate(), spider.parseDate("April 17, 2014"));
-		assertEquals(amazonItems.get(1).getPostedDate(), spider.parseDate("November 21, 2015"));
 		assertEquals(amazonItems.get(2).getPostedDate(), spider.parseDate("October 1, 2015"));
 		assertNull(amazonItems.get(3).getPostedDate());
 		assertNull(amazonItems.get(4).getPostedDate());
@@ -245,9 +246,6 @@ public class WebScraperTest{
 		WebScraper scraper = new WebScraper();
 		Controller controller = new Controller();
 		assertNull(scraper.scrape("-", controller));
-		
-		System.out.println(scraper.scrape("random",  controller));
-//		assertNotNull(scraper.scrape("random", controller));
 	}
 	
 	@AfterClass
