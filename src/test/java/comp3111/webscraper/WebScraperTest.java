@@ -247,6 +247,14 @@ public class WebScraperTest{
 		Controller controller = new Controller();
 		assertNull(scraper.scrape("-", controller));
 	}
+
+	@Test
+	public void randomTesting() throws Exception{
+		ArrayList<Item> a_ = new ArrayList<Item>();
+		ArrayList<Item> b_ = new ArrayList<Item>();
+		a_.addAll(b_);
+		assertEquals(a_.size(), 0);
+	}
 	
 	@AfterClass
  	public static void destroy() {
