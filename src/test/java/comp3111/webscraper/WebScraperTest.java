@@ -108,17 +108,25 @@ public class WebScraperTest{
 
 	@Test
 	public void amazonSpidersDeployment() throws Exception{
-		ArrayList<Item> amazonItem = new ArrayList<Item>();
-		amazonItem.add(new Item("Fruit of the Loom...", 16.99, dir_ + "/amazonItem.html", AMAZON, null));
-		amazonItem.add(new Item("temp", 0.0, dir_ + "/amazonLockpick.html", AMAZON, null));
-		amazonItem.add(new Item("tempService", 0.0, dir_ + "/amazonService.html", AMAZON, null));
+		ArrayList<Item> amazonItems = new ArrayList<Item>();
 		WebScraper scraper = new WebScraper();
+		amazonItems.add(new Item("temp", 16.99, dir_ + "/amazonItem.html", AMAZON, null));
+		amazonItems.add(new Item("temp", 0.0, dir_ + "/amazonLockpick.html", AMAZON, null));
+		amazonItems.add(new Item("temp", 0.0, dir_ + "/amazonService.html", AMAZON, null));
+		amazonItems.add(new Item("temp", 0.0, dir_ + "/amazonNoDate.html", AMAZON, null));
+		amazonItems.add(new Item("temp", 0.0, "temp", AMAZON, null));
+		Spider spider = new Spider("temp", "temp");
 		
-//		Spider spider = new Spider(amazonItem.get(0).getUrl(), amazonItem.get(0).getTitle());
-		amazonItem = scraper.deploySpiders(amazonItem);
-//		assertEquals(amazonItem.get(0).getPostedDate(), spider.parseDate("April 17, 2014"));
+		
+		amazonItems = scraper.deploySpiders(amazonItems);
+		// test 3 different cases / html layout
+		assertEquals(amazonItems.get(0).getPostedDate(), spider.parseDate("April 17, 2014"));
+		assertEquals(amazonItems.get(1).getPostedDate(), spider.parseDate("November 21, 2015"));
+		assertEquals(amazonItems.get(2).getPostedDate(), spider.parseDate("October 1, 2015"));
+		assertNull(amazonItems.get(3).getPostedDate());
+		assertNull(amazonItems.get(4).getPostedDate());
 	}
-	
+
 	@Test
 	public void craigsTitle() throws Exception{
 		HtmlPage craigsPage = craigsClient.getPage(dir_ + "/craigslist0.html");
@@ -231,9 +239,19 @@ public class WebScraperTest{
 		
 		//TODO: generate same double price for 100% branch coverage
 	}
+
+	@Test
+	public void scrapeTesting() throws Exception{
+		WebScraper scraper = new WebScraper();
+		Controller controller = new Controller();
+		assertNull(scraper.scrape("-", controller));
+		
+		System.out.println(scraper.scrape("random",  controller));
+//		assertNotNull(scraper.scrape("random", controller));
+	}
 	
 	@AfterClass
-	public static void destroy() {
+ 	public static void destroy() {
 		craigsClient.close();
 		amazonClient.close();
 	}
