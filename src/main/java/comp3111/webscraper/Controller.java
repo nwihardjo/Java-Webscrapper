@@ -7,6 +7,7 @@ import javafx.event.ActionEvent;
 import javafx.event.Event;
 import javafx.event.EventHandler;
 import javafx.fxml.FXML;
+import javax.swing.JOptionPane;
 
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
@@ -82,6 +83,20 @@ public class Controller {
     private void initialize() {
         refineKeyword.setDisable(true);
         refineButton.setDisable(true);
+    }
+
+    @FXML
+    private void aboutYourTeam() {
+        JOptionPane.showMessageDialog(null, 
+            "Albert Paredandan\n" +
+            "   ITSC: aparedandan\n" +
+            "   GitHub: albertparedandan\n\n" +
+            "Hanif Dean\n" +
+            "   ITSC: mhdnadhif\n" +
+            "   GitHub: hanifdean\n\n" +
+            "Nathaniel Wihardjo\n" +
+            "   ITSC: nwihardjo\n" +
+            "   GitHub: nwihardjo", "About Your Team", JOptionPane.PLAIN_MESSAGE);
     }
 
     /**
