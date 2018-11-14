@@ -205,6 +205,7 @@ public class WebScraperTest{
 		assertEquals(craigsAL.size(), 120);
 	}
 
+	/*
 	@Test
 	public void craigsPagination() throws Exception{
 		HtmlPage craigsPage = craigsClient.getPage(dir_ + "/craigslistEmpty.html");
@@ -214,6 +215,7 @@ public class WebScraperTest{
 		ArrayList<Item> craigsItems = scraper.handlePagination(craigsPage, controller);
 		assertEquals(craigsItems.size(), 0);
 	}
+	*/
 	
 	@Test
 	public void resultSorting() throws Exception{

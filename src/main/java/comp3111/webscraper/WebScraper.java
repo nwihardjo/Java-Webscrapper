@@ -254,32 +254,27 @@ public class WebScraper {
 		}
 	}
 
+	/*
 	// currently only for criaglist
 	public ArrayList<Item> handlePagination(HtmlPage page, Controller controller){
 		ArrayList<Item> craigsArrayList = new ArrayList<Item>();
 		int currentPage = 1;
 		try {
-			System.out.println("\t DEBUG: entering do loop");
 			do {
-				System.out.println("\t DEBUG: before if ");
 				if (currentPage != 1) 
 					page = client.getPage(getNextPage(page));
 //				controller.printConsole("\t Scraping page " + currentPage + "...\n");
-				System.out.println("\t DEBUG: error before addAdll");
 				craigsArrayList.addAll(scrapePage(page));
-				System.out.println("\t DEBUG: error after addAll");
 				currentPage += 1;
-				System.out.println("\t DEBUG: " + getNextPage(page));
 			} while (getNextPage(page) != null);
 		} catch (Exception e) {
-			System.out.println("\t DEBUG: handlePagination method caught exception");
 			e.printStackTrace();
 			return null;
 		}
 		
 		return craigsArrayList;
 	}
-	
+	*/
 	/**
 	 * Method to manage the workflow of scraping both portals based on the keyword specified. Handle amazon portal first, then the 
 	 * 	craigslist sequentially. Pagination of amazon is not handled, item's posted date retrieval is done concurrently, after all
