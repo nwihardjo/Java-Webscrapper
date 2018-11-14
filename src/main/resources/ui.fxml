@@ -40,7 +40,7 @@
             <MenuItem mnemonicParsing="false" onAction="#actionNew" text="New (call Controller.actionNew())" />
             <MenuItem mnemonicParsing="false" text="Open" />
             <SeparatorMenuItem mnemonicParsing="false" />
-            <MenuItem mnemonicParsing="false" text="Close" />
+            <MenuItem mnemonicParsing="false" onAction="#close" text="Close" />
             <MenuItem mnemonicParsing="false" text="Save" />
             <SeparatorMenuItem mnemonicParsing="false" />
             <MenuItem mnemonicParsing="false" onAction="#quit" text="Quit" />

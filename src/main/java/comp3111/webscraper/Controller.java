@@ -104,6 +104,16 @@ public class Controller {
         System.exit(0);
     }
 
+    @FXML
+    private void close() {
+        // @@@@@ set scraperResult null or not
+        scraperResult = null;
+        textAreaConsole.clear();
+        labelCount.setText("<total>");
+        labelPrice.setText("<AvgPrice>");
+        labelMin.setText("<Lowest>");
+        labelLatest.setText("<Latest>");
+    }
     /**
      * Called when the new button is pressed. Very dummy action - print something in the command prompt.
      */
