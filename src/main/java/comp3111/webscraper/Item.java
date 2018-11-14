@@ -3,6 +3,9 @@ package comp3111.webscraper;
 import java.util.Date;
 
 /**
+ * Class which is used to store the information of the posted items in both portals. It 
+ * 	implements Comparable base class to extend its functionality to be sorted by the price
+ * 	in a Collections-implemented containers.
  * 
  * @author nwihardjo
  *
@@ -16,6 +19,17 @@ public class Item implements Comparable <Item> {
 	private String portal ;
 	private Date postedDate;
 	
+	/**
+	 * Public constructor which is used to instantiate an object while setting up its attributes
+	 * 	in one line
+	 * 
+	 * @param title
+	 * @param price
+	 * @param url
+	 * @param portal
+	 * @param postedDate
+	 */
+	
 	public Item(String title, Double price, String url, String portal, Date postedDate) {
 		this.setTitle(title);
 		this.setPrice(price);
@@ -24,6 +38,9 @@ public class Item implements Comparable <Item> {
 		this.setPostedDate(postedDate);
 	}
 	
+	/**
+	 * Default constructor of the item, instantiate the object without instantiate any values
+	 */
 	public Item() {}
 	
 	public Date getPostedDate() {
