@@ -99,6 +99,11 @@ public class Controller {
             "   GitHub: nwihardjo", "About Your Team", JOptionPane.PLAIN_MESSAGE);
     }
 
+    @FXML
+    private void quit() {
+        System.exit(0);
+    }
+
     /**
      * Called when the new button is pressed. Very dummy action - print something in the command prompt.
      */
