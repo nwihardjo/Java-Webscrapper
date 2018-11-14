@@ -65,7 +65,7 @@ public class Spider implements Callable<Date> {
 	 * @return posted date of the service. Return null when no information on posted date available
 	 * @see parseDate
 	 */
-	private Date scrapeService(HtmlPage page) {
+	private static Date scrapeService(HtmlPage page) {
 		HtmlElement postedDate = (HtmlElement) page.getFirstByXPath("//div[@class='content']//*[contains(text(),'Date')]/parent::li");
 		
 		// if else condition += postedDate.asText() != ""
@@ -81,7 +81,7 @@ public class Spider implements Callable<Date> {
 	 * @param strDate date scraped from the html page
 	 * @return Date object of the posted date
 	 */
-	public Date parseDate(String strDate) {
+	private static Date parseDate(String strDate) {
 		SimpleDateFormat format = new SimpleDateFormat("MMMM dd, yyyy");
 		try {
 			return format.parse(strDate);

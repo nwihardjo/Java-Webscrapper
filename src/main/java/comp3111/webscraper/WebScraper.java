@@ -57,7 +57,7 @@ public class WebScraper {
 	 * @return title of the item
 	 * @see cleanStr
 	 */
-	public static String getTitle(HtmlElement item, String portal) {
+	private static String getTitle(HtmlElement item, String portal) {
 		String xPathAddr = (portal == AMAZON_URL) ? ".//h2[@data-attribute]" : ".//p[@class='result-info']/a";
 		HtmlElement itemTitle = (HtmlElement) item.getFirstByXPath(xPathAddr);
 		
@@ -73,8 +73,7 @@ public class WebScraper {
 	 * @return  list of the item present in the page
 	 * @see scrape
 	 */
-	// currently for craigslist item, scrape single page
-	public static ArrayList<Item> scrapePage(HtmlPage page) {
+	private static ArrayList<Item> scrapePage(HtmlPage page) {
 		List<?> items = (List<?>) page.getByXPath("//li[@class='result-row']");
 		ArrayList<Item> craigsArrayList = new ArrayList<Item>();
 		for (int i = 0; i < items.size(); i++) {
@@ -96,7 +95,7 @@ public class WebScraper {
 	 * @param portal name of the portal the passed item came from
 	 * @return price of the item in USD based on the condition described
 	 */
-	public static Double getPrice(HtmlElement item, String portal) {
+	private static Double getPrice(HtmlElement item, String portal) {
 		// return 0.0 if the price is not specified
 		if (portal == AMAZON_URL) {
 			// portal: amazon 
@@ -137,7 +136,7 @@ public class WebScraper {
 	 * @return cleaned / parsed string
 	 * @see getTitle, getPrice
 	 */
-	public static String cleanStr(String str, String use) {
+	private static String cleanStr(String str, String use) {
 		if (use == "price") {
 			return str.replace("$", "").replace(",", "");
 		} else
@@ -150,7 +149,7 @@ public class WebScraper {
 	 * @param page HtmlPage of which the next page going to be searched
 	 * @return link to the next page, if any. Return null if there isn't one
 	 */
-	public static String getNextPage(HtmlPage page) {
+	private static String getNextPage(HtmlPage page) {
 		HtmlAnchor nextPageUrl = (HtmlAnchor) page.getFirstByXPath("//a[@class='button next']");
 		if (nextPageUrl == null || nextPageUrl.getHrefAttribute().length() == 0) {
 			return null;
@@ -166,7 +165,7 @@ public class WebScraper {
 	 * @param portal name of the website where the passed item came from
 	 * @return url of the item page in its respective portal
 	 */
-	public static String getUrl(HtmlElement item, String portal) {
+	private static String getUrl(HtmlElement item, String portal) {
 		String portal_url = (portal == AMAZON_URL) ? AMAZON_URL : DEFAULT_URL;
 		String xPathAddr = (portal == AMAZON_URL) ? ".//h2[@data-attribute]/parent::a" : ".//p[@class='result-info']/a";
 		HtmlAnchor itemUrl = (HtmlAnchor) item.getFirstByXPath(xPathAddr);
@@ -183,7 +182,7 @@ public class WebScraper {
 	 * 	on the posted date.
 	 * @see deploySpiders
 	 */
-	public static Date getPostedDate(HtmlElement item){
+	private static Date getPostedDate(HtmlElement item){
 		try {
 			DomAttr itemDate = (DomAttr) item.getFirstByXPath(".//*[@class='result-date']/@datetime");
 			SimpleDateFormat dateFormatting = new SimpleDateFormat("yyyy-MM-dd HH:mm");
@@ -201,7 +200,7 @@ public class WebScraper {
 	 * @param craigsArrayList list of the items retrieved from craigslist portal
 	 * @return list of sorted items based on the condition described
 	 */
-	public static Vector<Item> sortResult(ArrayList<Item> amazonArrayList, ArrayList<Item> craigsArrayList){
+	private static Vector<Item> sortResult(ArrayList<Item> amazonArrayList, ArrayList<Item> craigsArrayList){
 		Collections.sort(amazonArrayList);
 		Collections.sort(craigsArrayList);
 		if (amazonArrayList.isEmpty() && !craigsArrayList.isEmpty())
@@ -236,7 +235,7 @@ public class WebScraper {
 	 * @return same list of items passed with updated posted date value, if any
 	 * @see Spiders.call, Spiders.java
 	 */
-	public ArrayList<Item> deploySpiders(ArrayList<Item> amazonArrayList){
+	private ArrayList<Item> deploySpiders(ArrayList<Item> amazonArrayList){
 		try {
 			amazonSpiderPool = Executors.newFixedThreadPool(amazonArrayList.size());
 			List<Future<Date>> spiders = new ArrayList<Future<Date>>();
