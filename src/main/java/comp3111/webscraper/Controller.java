@@ -14,6 +14,13 @@ import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.Hyperlink;
+import javafx.scene.control.MenuItem;
+import javafx.scene.control.TableView;
+import javafx.scene.control.TableColumn;
+import javafx.scene.control.TablePosition;
+import javafx.collections.FXCollections;
+import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.scene.input.MouseEvent;
 
 import java.awt.*;
 import java.io.IOException;
@@ -65,9 +72,33 @@ public class Controller {
     @FXML
     private Button refineButton;
 
+    @FXML
+    private MenuItem lastSearchMenuItem;
+
+    @FXML
+    private TableView itemTable;
+
+    @FXML
+    private TableColumn tableTitle;
+
+    @FXML
+    private TableColumn tablePrice;
+
+    @FXML
+    private TableColumn tableURL;
+
+    @FXML
+    private TableColumn tablePostedDate;
+
     private WebScraper scraper;
 
     private List<Item> scraperResult;
+
+    private List<Item> lastResult;
+
+    private String currentOutput = "";
+
+    private String lastOutput = "";
 
     /**
      * Default controller
@@ -83,6 +114,7 @@ public class Controller {
     private void initialize() {
         refineKeyword.setDisable(true);
         refineButton.setDisable(true);
+        lastSearchMenuItem.setDisable(true);
     }
 
     @FXML
@@ -118,8 +150,17 @@ public class Controller {
      * Called when the new button is pressed. Very dummy action - print something in the command prompt.
      */
     @FXML
-    private void actionNew() {
-        System.out.println("actionNew");
+    private void lastSearch() {
+        if (lastResult == null) {
+        }
+        else {
+            textAreaConsole.clear();
+            printConsole(lastOutput);
+            setLabelCount(lastResult.size());
+            setLabelPrice(countAvgPrice(lastResult));
+            //lowest and latestpost
+            lastSearchMenuItem.setDisable(true);
+        }
     }
 
     @FXML
@@ -137,24 +178,66 @@ public class Controller {
     		textAreaConsole.clear();
     		System.out.println("actionSearch: " + textFieldKeyword.getText());
     		List<Item> result = scraper.scrape(textFieldKeyword.getText(), this);
-    		String output = "";
-    		
+            String output = "";
+            lastOutput = currentOutput;
+            lastResult = scraperResult;
     		// prevent thrown exception when there's no result
     		if (result != null) {
 	    		for (Item item : result) {
 	    			output += item.getTitle() + "\t" + item.getPrice() + "\t" + item.getUrl() + "\n";
 	    		}
-    		}
+            }
+            
+            currentOutput = output;
+
     		textAreaConsole.clear();
     		printConsole(output); 
     		scraperResult = result;
-    		refreshSummaryTab();
+            refreshSummaryTab();
+            refreshTableTab();
     		togglePrimarySearch();
-    		toggleRefineSearch();
+            toggleRefineSearch();
+            lastSearchMenuItem.setDisable(false);
     	});
     	thread.start();
     }
+
+    private void refreshTableTab() {
+        List<Item> tempResult = scraperResult;
     
+        tableTitle.setCellValueFactory(new PropertyValueFactory<Item, String>("title"));
+        tablePrice.setCellValueFactory(new PropertyValueFactory<Item, Double>("price"));
+        tableURL.setCellValueFactory(new PropertyValueFactory<Item, String>("url"));
+        tablePostedDate.setCellValueFactory(new PropertyValueFactory<Item, Date>("postedDate"));
+
+        itemTable.setItems(FXCollections.observableList(tempResult));
+        itemTable.getSelectionModel().setCellSelectionEnabled(true);
+        itemTable.setOnMouseClicked(new EventHandler<MouseEvent>() {
+            @Override
+            public void handle(MouseEvent click) {
+                if (click.getClickCount() == 1) {
+                    @SuppressWarnings("rawtypes")
+                    //System.out.println(itemTable.getSelectionModel().getSelectedCells().get(0));
+                    TablePosition pos = (TablePosition) itemTable.getSelectionModel().getSelectedCells().get(0);
+                    int row = pos.getRow();
+                    int col = pos.getColumn();
+                    @SuppressWarnings("rawtypes")
+                    TableColumn column = pos.getTableColumn();
+                    if (col == 2) {
+                        String val = column.getCellData(row).toString();
+                        try {
+                            Desktop.getDesktop().browse(new URI(val));
+                        } catch (IOException e1) {
+                            e1.printStackTrace();
+                        } catch (URISyntaxException e1) {
+                            e1.printStackTrace();
+                        }
+                    }
+                }
+            }
+        });
+    }
+
     // enable asynchronous printing on console tab
     public void printConsole (String message) {
     	if (Platform.isFxApplicationThread()) {
