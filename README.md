@@ -1,4 +1,12 @@
 # COMP3111: Software Engineering Project - Webscrapper
+## Division of Labour
+| Team member                                                            | Features assigned                                                                                                                               |
+|------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------|
+|   [Albert Paredandan](https://github.com/albertparedandan) <br> 20373300    | Feature 4 - Fill in the tab `Table` with all result of the current search <br> Feature 6 - Finish the rest of the menu bar except `Save` and `Open` |
+|   [Mohammad Hanif Dean Nadhif](https://github.com/hanifdean/) <br> 20314548 | Feature 1 - Fill in `Summary` tab <br>   Feature 5 - Refine search                                                                                   |
+|   [Nathaniel Wihardjo](https://github.com/nwihardjo/) <br> 20315011         | Feature 2 - Scrape data from webpage of a local/international selling/reselling portal <br>   Feature 3 - Handle pagination                          |
+
+
 ## Project Problem Statement and Activities
 
 
