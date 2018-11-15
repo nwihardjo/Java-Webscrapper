@@ -159,7 +159,8 @@ public class Controller {
             printConsole(lastOutput);
             setLabelCount(lastResult.size());
             setLabelPrice(countAvgPrice(lastResult));
-            //lowest and latestpost
+            setLabelMin(countLowestPrice(lastResult), lastResult);
+            setLabelLatest(lastResult);
             refreshTableTab(lastResult);
             lastSearchMenuItem.setDisable(true);
         }
@@ -197,7 +198,7 @@ public class Controller {
     		scraperResult = result;
             refreshSummaryTab();
             refreshTableTab(scraperResult);
-    		togglePrimarySearch();
+    		//togglePrimarySearch();
             toggleRefineSearch();
             lastSearchMenuItem.setDisable(false);
     	});
@@ -269,7 +270,7 @@ public class Controller {
 //        }
         textAreaConsole.clear();
         refreshSummaryTab();
-        togglePrimarySearch();
+        //togglePrimarySearch();
         toggleRefineSearch();
         printOutputToConsole();
     }
@@ -284,13 +285,13 @@ public class Controller {
     }
 
     private void updateSummaryDetails() {
-        int itemCount = getItemCount();
+        int itemCount = getItemCount(scraperResult);
         double avgPrice = getAvgPrice();
-        double lowestPrice = getLowestPrice();
+        double lowestPrice = getLowestPrice(scraperResult);
         setLabelCount(itemCount);
         setLabelPrice(avgPrice);
-        setLabelMin(lowestPrice);
-        setLabelLatest();
+        setLabelMin(lowestPrice, scraperResult);
+        setLabelLatest(scraperResult);
     }
 
     private void togglePrimarySearch() {
@@ -324,7 +325,7 @@ public class Controller {
         printConsole(output);
     }
 
-    private int getItemCount() {
+    private int getItemCount(List<Item> scraperResult) {
         return scraperResult.size();
     }
 
@@ -360,7 +361,7 @@ public class Controller {
             labelPrice.setText("-");
     }
 
-    private double getLowestPrice() {
+    private double getLowestPrice(List<Item> scraperResult) {
         boolean resultFound = (scraperResult.size() != 0);
         if (resultFound)
             return countLowestPrice(scraperResult);
@@ -379,24 +380,24 @@ public class Controller {
         return lowestPrice;
     }
 
-    private void setLabelMin(double lowestPrice) {
+    private void setLabelMin(double lowestPrice, List<Item> scraperResult) {
         // if priceAvailable set hyperlink to page (getItemWithLowestPrice)
         // else display "-"
         boolean priceAvailable = (lowestPrice != 0.0);
         if (priceAvailable) {
             labelMin.setText(String.format("%.2f", lowestPrice));
-            showLowestPricedItemInBrowser();
+            showLowestPricedItemInBrowser(scraperResult);
         }
         else
             labelMin.setText("-");
     }
 
-    private void showLowestPricedItemInBrowser() {
+    private void showLowestPricedItemInBrowser(List<Item> scraperResult) {
         labelMin.setOnAction(new EventHandler<ActionEvent>() {
             @Override
             public void handle(ActionEvent event) {
                 try {
-                    Desktop.getDesktop().browse(new URI(getLowestPriceURI()));
+                    Desktop.getDesktop().browse(new URI(getLowestPriceURI(scraperResult)));
                 } catch (IOException e1) {
                     e1.printStackTrace();
                 } catch (URISyntaxException e1) {
@@ -406,13 +407,13 @@ public class Controller {
         });
     }
 
-    private String getLowestPriceURI() {
+    private String getLowestPriceURI(List<Item> scraperResult) {
         /*
          * Returns the first item with the lowest price
          * if there are two items with the same lowest price,
          * function returns the first one.
          */
-        double lowestPrice = getLowestPrice();
+        double lowestPrice = getLowestPrice(scraperResult);
         String url = "";
         for (Item item : scraperResult) {
             if (item.getPrice() == lowestPrice) {
@@ -423,22 +424,22 @@ public class Controller {
         return url;
     }
 
-    private void setLabelLatest() {
-        boolean itemsFound = (getItemCount() != 0);
+    private void setLabelLatest(List<Item> scraperResult) {
+        boolean itemsFound = (getItemCount(scraperResult) != 0);
         if (itemsFound) {
-            showLatestPostInBrowser();
+            showLatestPostInBrowser(scraperResult);
         }
         else
             labelLatest.setText("-");
     }
 
-    private void showLatestPostInBrowser() {
+    private void showLatestPostInBrowser(List<Item> scraperResult) {
         labelLatest.setText("See latest post");
         labelLatest.setOnAction(new EventHandler<ActionEvent>() {
             @Override
             public void handle(ActionEvent event) {
                 try {
-                    Desktop.getDesktop().browse(new URI(getLatestPostURI()));
+                    Desktop.getDesktop().browse(new URI(getLatestPostURI(scraperResult)));
                 } catch (IOException e1) {
                     e1.printStackTrace();
                 } catch (URISyntaxException e1) {
@@ -448,7 +449,7 @@ public class Controller {
         });
     }
 
-    private String getLatestPostURI() {
+    private String getLatestPostURI(List<Item> scraperResult) {
         Date latestDate = scraperResult.get(0).getPostedDate();
         String latestPostURI = scraperResult.get(0).getUrl();
         for (Item item: scraperResult) {
