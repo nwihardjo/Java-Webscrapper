@@ -145,6 +145,7 @@ public class Controller {
         labelPrice.setText("<AvgPrice>");
         labelMin.setText("<Lowest>");
         labelLatest.setText("<Latest>");
+        itemTable.getItems().clear();
     }
     /**
      * Called when the new button is pressed. Very dummy action - print something in the command prompt.
@@ -159,6 +160,7 @@ public class Controller {
             setLabelCount(lastResult.size());
             setLabelPrice(countAvgPrice(lastResult));
             //lowest and latestpost
+            refreshTableTab(lastResult);
             lastSearchMenuItem.setDisable(true);
         }
     }
@@ -194,7 +196,7 @@ public class Controller {
     		printConsole(output); 
     		scraperResult = result;
             refreshSummaryTab();
-            refreshTableTab();
+            refreshTableTab(scraperResult);
     		togglePrimarySearch();
             toggleRefineSearch();
             lastSearchMenuItem.setDisable(false);
@@ -202,8 +204,8 @@ public class Controller {
     	thread.start();
     }
 
-    private void refreshTableTab() {
-        List<Item> tempResult = scraperResult;
+    private void refreshTableTab(List<Item> dummy) {
+        List<Item> tempResult = dummy;
     
         tableTitle.setCellValueFactory(new PropertyValueFactory<Item, String>("title"));
         tablePrice.setCellValueFactory(new PropertyValueFactory<Item, Double>("price"));
