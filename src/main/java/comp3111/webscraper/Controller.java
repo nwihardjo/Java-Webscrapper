@@ -7,12 +7,20 @@ import javafx.event.ActionEvent;
 import javafx.event.Event;
 import javafx.event.EventHandler;
 import javafx.fxml.FXML;
+import javax.swing.JOptionPane;
 
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.Hyperlink;
+import javafx.scene.control.MenuItem;
+import javafx.scene.control.TableView;
+import javafx.scene.control.TableColumn;
+import javafx.scene.control.TablePosition;
+import javafx.collections.FXCollections;
+import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.scene.input.MouseEvent;
 
 import java.awt.*;
 import java.io.IOException;
@@ -64,9 +72,33 @@ public class Controller {
     @FXML
     private Button refineButton;
 
+    @FXML
+    private MenuItem lastSearchMenuItem;
+
+    @FXML
+    private TableView itemTable;
+
+    @FXML
+    private TableColumn tableTitle;
+
+    @FXML
+    private TableColumn tablePrice;
+
+    @FXML
+    private TableColumn tableURL;
+
+    @FXML
+    private TableColumn tablePostedDate;
+
     private WebScraper scraper;
 
     private List<Item> scraperResult;
+
+    private List<Item> lastResult;
+
+    private String currentOutput = "";
+
+    private String lastOutput = "";
 
     /**
      * Default controller
@@ -82,14 +114,56 @@ public class Controller {
     private void initialize() {
         refineKeyword.setDisable(true);
         refineButton.setDisable(true);
+        lastSearchMenuItem.setDisable(true);
     }
 
+    @FXML
+    private void aboutYourTeam() {
+        JOptionPane.showMessageDialog(null, 
+            "Albert Paredandan\n" +
+            "   ITSC: aparedandan\n" +
+            "   GitHub: albertparedandan\n\n" +
+            "Hanif Dean\n" +
+            "   ITSC: mhdnadhif\n" +
+            "   GitHub: hanifdean\n\n" +
+            "Nathaniel Wihardjo\n" +
+            "   ITSC: nwihardjo\n" +
+            "   GitHub: nwihardjo", "About Your Team", JOptionPane.PLAIN_MESSAGE);
+    }
+
+    @FXML
+    private void quit() {
+        System.exit(0);
+    }
+
+    @FXML
+    private void close() {
+        // @@@@@ set scraperResult null or not
+        scraperResult = null;
+        textAreaConsole.clear();
+        labelCount.setText("<total>");
+        labelPrice.setText("<AvgPrice>");
+        labelMin.setText("<Lowest>");
+        labelLatest.setText("<Latest>");
+        itemTable.getItems().clear();
+    }
     /**
      * Called when the new button is pressed. Very dummy action - print something in the command prompt.
      */
     @FXML
-    private void actionNew() {
-        System.out.println("actionNew");
+    private void lastSearch() {
+        if (lastResult == null) {
+        }
+        else {
+            textAreaConsole.clear();
+            printConsole(lastOutput);
+            setLabelCount(lastResult.size());
+            setLabelPrice(countAvgPrice(lastResult));
+            setLabelMin(countLowestPrice(lastResult), lastResult);
+            setLabelLatest(lastResult);
+            refreshTableTab(lastResult);
+            lastSearchMenuItem.setDisable(true);
+        }
     }
 
     @FXML
@@ -107,24 +181,66 @@ public class Controller {
     		textAreaConsole.clear();
     		System.out.println("actionSearch: " + textFieldKeyword.getText());
     		List<Item> result = scraper.scrape(textFieldKeyword.getText(), this);
-    		String output = "";
-    		
+            String output = "";
+            lastOutput = currentOutput;
+            lastResult = scraperResult;
     		// prevent thrown exception when there's no result
     		if (result != null) {
 	    		for (Item item : result) {
 	    			output += item.getTitle() + "\t" + item.getPrice() + "\t" + item.getUrl() + "\n";
 	    		}
-    		}
+            }
+            
+            currentOutput = output;
+
     		textAreaConsole.clear();
     		printConsole(output); 
     		scraperResult = result;
-    		refreshSummaryTab();
-    		togglePrimarySearch();
-    		toggleRefineSearch();
+            refreshSummaryTab();
+            refreshTableTab(scraperResult);
+    		//togglePrimarySearch();
+            toggleRefineSearch();
+            lastSearchMenuItem.setDisable(false);
     	});
     	thread.start();
     }
+
+    private void refreshTableTab(List<Item> dummy) {
+        List<Item> tempResult = dummy;
     
+        tableTitle.setCellValueFactory(new PropertyValueFactory<Item, String>("title"));
+        tablePrice.setCellValueFactory(new PropertyValueFactory<Item, Double>("price"));
+        tableURL.setCellValueFactory(new PropertyValueFactory<Item, String>("url"));
+        tablePostedDate.setCellValueFactory(new PropertyValueFactory<Item, Date>("postedDate"));
+
+        itemTable.setItems(FXCollections.observableList(tempResult));
+        itemTable.getSelectionModel().setCellSelectionEnabled(true);
+        itemTable.setOnMouseClicked(new EventHandler<MouseEvent>() {
+            @Override
+            public void handle(MouseEvent click) {
+                if (click.getClickCount() == 1) {
+                    @SuppressWarnings("rawtypes")
+                    //System.out.println(itemTable.getSelectionModel().getSelectedCells().get(0));
+                    TablePosition pos = (TablePosition) itemTable.getSelectionModel().getSelectedCells().get(0);
+                    int row = pos.getRow();
+                    int col = pos.getColumn();
+                    @SuppressWarnings("rawtypes")
+                    TableColumn column = pos.getTableColumn();
+                    if (col == 2) {
+                        String val = column.getCellData(row).toString();
+                        try {
+                            Desktop.getDesktop().browse(new URI(val));
+                        } catch (IOException e1) {
+                            e1.printStackTrace();
+                        } catch (URISyntaxException e1) {
+                            e1.printStackTrace();
+                        }
+                    }
+                }
+            }
+        });
+    }
+
     // enable asynchronous printing on console tab
     public void printConsole (String message) {
     	if (Platform.isFxApplicationThread()) {
@@ -154,7 +270,7 @@ public class Controller {
 //        }
         textAreaConsole.clear();
         refreshSummaryTab();
-        togglePrimarySearch();
+        //togglePrimarySearch();
         toggleRefineSearch();
         printOutputToConsole();
     }
@@ -169,13 +285,13 @@ public class Controller {
     }
 
     private void updateSummaryDetails() {
-        int itemCount = getItemCount();
+        int itemCount = getItemCount(scraperResult);
         double avgPrice = getAvgPrice();
-        double lowestPrice = getLowestPrice();
+        double lowestPrice = getLowestPrice(scraperResult);
         setLabelCount(itemCount);
         setLabelPrice(avgPrice);
-        setLabelMin(lowestPrice);
-        setLabelLatest();
+        setLabelMin(lowestPrice, scraperResult);
+        setLabelLatest(scraperResult);
     }
 
     private void togglePrimarySearch() {
@@ -209,7 +325,7 @@ public class Controller {
         printConsole(output);
     }
 
-    private int getItemCount() {
+    private int getItemCount(List<Item> scraperResult) {
         return scraperResult.size();
     }
 
@@ -245,7 +361,7 @@ public class Controller {
             labelPrice.setText("-");
     }
 
-    private double getLowestPrice() {
+    private double getLowestPrice(List<Item> scraperResult) {
         boolean resultFound = (scraperResult.size() != 0);
         if (resultFound)
             return countLowestPrice(scraperResult);
@@ -264,24 +380,24 @@ public class Controller {
         return lowestPrice;
     }
 
-    private void setLabelMin(double lowestPrice) {
+    private void setLabelMin(double lowestPrice, List<Item> scraperResult) {
         // if priceAvailable set hyperlink to page (getItemWithLowestPrice)
         // else display "-"
         boolean priceAvailable = (lowestPrice != 0.0);
         if (priceAvailable) {
             labelMin.setText(String.format("%.2f", lowestPrice));
-            showLowestPricedItemInBrowser();
+            showLowestPricedItemInBrowser(scraperResult);
         }
         else
             labelMin.setText("-");
     }
 
-    private void showLowestPricedItemInBrowser() {
+    private void showLowestPricedItemInBrowser(List<Item> scraperResult) {
         labelMin.setOnAction(new EventHandler<ActionEvent>() {
             @Override
             public void handle(ActionEvent event) {
                 try {
-                    Desktop.getDesktop().browse(new URI(getLowestPriceURI()));
+                    Desktop.getDesktop().browse(new URI(getLowestPriceURI(scraperResult)));
                 } catch (IOException e1) {
                     e1.printStackTrace();
                 } catch (URISyntaxException e1) {
@@ -291,13 +407,13 @@ public class Controller {
         });
     }
 
-    private String getLowestPriceURI() {
+    private String getLowestPriceURI(List<Item> scraperResult) {
         /*
          * Returns the first item with the lowest price
          * if there are two items with the same lowest price,
          * function returns the first one.
          */
-        double lowestPrice = getLowestPrice();
+        double lowestPrice = getLowestPrice(scraperResult);
         String url = "";
         for (Item item : scraperResult) {
             if (item.getPrice() == lowestPrice) {
@@ -308,22 +424,22 @@ public class Controller {
         return url;
     }
 
-    private void setLabelLatest() {
-        boolean itemsFound = (getItemCount() != 0);
+    private void setLabelLatest(List<Item> scraperResult) {
+        boolean itemsFound = (getItemCount(scraperResult) != 0);
         if (itemsFound) {
-            showLatestPostInBrowser();
+            showLatestPostInBrowser(scraperResult);
         }
         else
             labelLatest.setText("-");
     }
 
-    private void showLatestPostInBrowser() {
+    private void showLatestPostInBrowser(List<Item> scraperResult) {
         labelLatest.setText("See latest post");
         labelLatest.setOnAction(new EventHandler<ActionEvent>() {
             @Override
             public void handle(ActionEvent event) {
                 try {
-                    Desktop.getDesktop().browse(new URI(getLatestPostURI()));
+                    Desktop.getDesktop().browse(new URI(getLatestPostURI(scraperResult)));
                 } catch (IOException e1) {
                     e1.printStackTrace();
                 } catch (URISyntaxException e1) {
@@ -333,7 +449,7 @@ public class Controller {
         });
     }
 
-    private String getLatestPostURI() {
+    private String getLatestPostURI(List<Item> scraperResult) {
         Date latestDate = scraperResult.get(0).getPostedDate();
         String latestPostURI = scraperResult.get(0).getUrl();
         for (Item item: scraperResult) {
