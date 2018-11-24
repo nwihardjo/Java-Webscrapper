@@ -1,4 +1,20 @@
 # COMP3111: Software Engineering Project - Webscrapper
+
+* Group Name: #35-SHIBE
+
+| Member                                                   | Task    | Task    |
+|----------------------------------------------------------|---------|---------|
+| [albertparedandan](https://github.com/albertparedandan/) | Basic 4 | Basic 6 |
+| [hanifdean](https://github.com/hanifdean/)               | Basic 1 | Basic 5 |
+| [nwihardjo](https://github.com/nwihardjo/)               | Basic 2 | Basic 3 |
+
+* Assumptions
+
+1. Use amazon.com as addition reselling portal
+2. 
+
+
+
 ## Project Problem Statement and Activities
 
 
