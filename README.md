@@ -1,10 +1,18 @@
 # COMP3111: Software Engineering Project - Webscrapper
-## Division of Labour
-| Team member                                                            | Features assigned                                                                                                                               |
-|------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------|
-|   [Albert Paredandan](https://github.com/albertparedandan) <br> 20373300    | Feature 4 - Fill in the tab `Table` with all result of the current search <br> Feature 6 - Finish the rest of the menu bar except `Save` and `Open` |
-|   [Mohammad Hanif Dean Nadhif](https://github.com/hanifdean/) <br> 20314548 | Feature 1 - Fill in `Summary` tab <br>   Feature 5 - Refine search                                                                                   |
-|   [Nathaniel Wihardjo](https://github.com/nwihardjo/) <br> 20315011         | Feature 2 - Scrape data from webpage of a local/international selling/reselling portal <br>   Feature 3 - Handle pagination                          |
+
+* Group Name: #35-SHIBE
+
+| Member                                                   | Task    | Task    |
+|----------------------------------------------------------|---------|---------|
+| [albertparedandan](https://github.com/albertparedandan/) | Basic 4 | Basic 6 |
+| [hanifdean](https://github.com/hanifdean/)               | Basic 1 | Basic 5 |
+| [nwihardjo](https://github.com/nwihardjo/)               | Basic 2 | Basic 3 |
+
+* Assumptions
+
+1. Use amazon.com as addition reselling portal
+2. 
+
 
 
 ## Project Problem Statement and Activities
