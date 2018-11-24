@@ -55,7 +55,6 @@ public class WebScraper {
 	 * @param item  containing one specific item from either portal
 	 * @param portal which the item originated (amazon / craigslist)
 	 * @return title of the item
-	 * @see cleanStr
 	 */
 	private static String getTitle(HtmlElement item, String portal) {
 		String xPathAddr = (portal == AMAZON_URL) ? ".//h2[@data-attribute]" : ".//p[@class='result-info']/a";
@@ -71,7 +70,6 @@ public class WebScraper {
 	 * 
 	 * @param page a single page of the craigslist portal
 	 * @return  list of the item present in the page
-	 * @see scrape
 	 */
 	private static ArrayList<Item> scrapePage(HtmlPage page) {
 		List<?> items = (List<?>) page.getByXPath("//li[@class='result-row']");
@@ -88,7 +86,7 @@ public class WebScraper {
 	/**
 	 * Retrieve the price of an amazon's or craigslist's item based on its XPath address. For amazon item, if main price 
 	 * 	present, only the main price will be used. If main price does not present, cheapest price of offers / other buying options
-	 * 	, if any, will be used. If the stated price were a range, average of the price range will be used. Utilised
+	 * 	, if any, will be used. If the stated price were a range, avose your Free Limited Edition Gift! erage of the price range will be used. Utilised
 	 * 	cleanStr method to clean / parse the price (i.e. containing $, ",", etc). If no price exists, price will be 0.
 	 * 
 	 * @param item HtmlElement which containing only a single item
@@ -134,7 +132,6 @@ public class WebScraper {
 	 * @param str string going to be parsed / cleaned
 	 * @param use name of the method which call this method
 	 * @return cleaned / parsed string
-	 * @see getTitle, getPrice
 	 */
 	private static String cleanStr(String str, String use) {
 		if (use == "price") {
@@ -144,7 +141,7 @@ public class WebScraper {
 	}
 	
 	/**
-	 * Retrieve the liik to the next page of the craigslist portal. Used for pagination features
+	 * Retrieve the link to the next page of the craigslist portal. Used for pagination features
 	 * 
 	 * @param page HtmlPage of which the next page going to be searched
 	 * @return link to the next page, if any. Return null if there isn't one
@@ -180,7 +177,6 @@ public class WebScraper {
 	 * @param item HtmlElement consisting of a single item
 	 * @return date of when the item is posted in HKT (Hong Kong Time). Return null when there is no available information
 	 * 	on the posted date.
-	 * @see deploySpiders
 	 */
 	private static Date getPostedDate(HtmlElement item){
 		try {
@@ -233,7 +229,6 @@ public class WebScraper {
 	 * 
 	 * @param amazonArrayList list of items present in a single page of amazon portal
 	 * @return same list of items passed with updated posted date value, if any
-	 * @see Spiders.call, Spiders.java
 	 */
 	private ArrayList<Item> deploySpiders(ArrayList<Item> amazonArrayList){
 		try {
@@ -254,7 +249,7 @@ public class WebScraper {
 	}
 
 	/*
-	// currently only for criaglist
+	// currently only for craigslist
 	public ArrayList<Item> handlePagination(HtmlPage page, Controller controller){
 		ArrayList<Item> craigsArrayList = new ArrayList<Item>();
 		int currentPage = 1;
@@ -295,7 +290,6 @@ public class WebScraper {
 			ArrayList<Item> amazonArrayList = new ArrayList<Item>();
 			
 			// item retrieval
-			// USECASE: if the item is not a single search, i.e. "book", which return a whole sub-section, meaning no item found
 			for (int i = 0; i < amazonResult.size(); i++) {
 				HtmlElement amazonItem = (HtmlElement) amazonResult.get(i);
 
