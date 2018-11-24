@@ -24,13 +24,18 @@
 
 ---
 
+#TL;DR
+WebScraper to scrape both amazon and newyork craigslist website based on the keyword specified. Utilised multi-threading to 
+support concurrency on craiglist pagination and amazon items' posted date retrieval which significantly improve the performance.
+
+---
+
 # Dependencies
 
 1. Java 8 JDK with Gradle
 1. JavaFX for GUI framework
 1. JUnit 4.12 for testing suite
 1. Jacoco for test coverage measurement
-
 
 ---
 
@@ -40,29 +45,34 @@ We configure the project with Gradle. Gradle can be considered as Makefile like 
 
 ## Compile with Windows Command Prompt 
 
-Goto your folder and type `gradlew run`. This will build and run the project. 
+- Goto your project root folder
+- Type `gradlew run`. This will build and run the project. 
 
-If you want to just rerun the project without rebuilding it, you can go to the folder `build\jar\` 
-there should be a jar file (e.g. `webscraper-0.1.0.jar`). Try double click on it 
-(yes, you need a GUI screen to run it). 
+If you want to just rerun the project without rebuilding it, 
+- Go to the project root folder `build\jar\` 
+- Double click jar file (e.g. `webscraper-0.1.0.jar`) yes, you need a GUI screen to run it. 
 
 ## Compile with Mac/Linux terminal 
 
-Goto your folder and type `./gradlew build`. This will build and run the project. If the application is not showing up, type `./gradlew run`.  
+- Goto your project root folder
+- `./gradlew build`. This will build the project.
+- `./gradlew run` which going to run the application 
 
-If you want to just rerun the project without rebuilding it, you can go to the folder `build/jar/` 
-there should be a jar file (e.g. `webscraper-0.1.0.jar`). Try double click on it 
-(yes, you need a GUI screen to run it). 
+If you want to just rerun the project without rebuilding it, 
+- Go to the folder `build/jar/` 
+- Double click jar file (e.g. `webscraper-0.1.0.jar`) or simply `./gradlew run`
 
 ### Unit test and jacoco coverage report
 
-Go to the project root directory and use `./gradlew test jacocoTestReport` to generate the test report anc coverage. It will run all unit tests and generate the coverage report. 
+- Go to the project root directory
+- `./gradlew test jacocoTestReport` to generate the test report anc coverage. It will run all unit tests and generate the coverage report 
 
+- Jacoco coverage report can be accessed from `./build/jacocoHTML/index.html` 
+- Unit tests report is on `./build/reports/tests/test/index.html`
 
-Jacoco coverage report can be accessed from `./build/jacocoHTML/index.html` while the result of the unit tests is on `./build/reports/tests/test/index.html`.
-
-Some of the unit tests use cached pages from both portals. Utilised Reflection method to unit test private functions (not a good practise i know).
+Some of the unit tests use cached pages from both portals. Testing utilises Reflection method to unit test private functions (not a good practise i know).
 
 ### Documentation / javadoc
 
-From project root directory, generate the javadoc using `./gradlew javadoc`. Then the documentation is available at `./build/docs/javadoc/index.html`.
+- In project root directory, `./gradlew javadoc` to generate javadoc
+- Documentation is available at `./build/docs/javadoc/index.html`.
