@@ -22,6 +22,7 @@ public class WebScraperTest{
 	private static final String AMAZON = "https://www.amazon.com/";
 	private static WebScraper scraper;
 	private static Spider spider;
+	private static craigsSpider cSpider;
 	private static ArrayList<Method> methods;
 	
 	@BeforeClass
@@ -29,6 +30,7 @@ public class WebScraperTest{
 		dir_ = "file://" + System.getProperty("user.dir") + "/unitTest_pages";
 		scraper = new WebScraper();
 		spider = new Spider("temp");
+		cSpider = new craigsSpider("temp");
 		
 		craigsClient = new WebClient();
 		craigsClient.getOptions().setCssEnabled(false);
@@ -56,7 +58,9 @@ public class WebScraperTest{
 		
 		paramTypes[0] = com.gargoylesoftware.htmlunit.html.HtmlPage.class;
 		methods.add(scraper.getClass().getDeclaredMethod("scrapePage", paramTypes));
-		methods.add(scraper.getClass().getDeclaredMethod("getNextPage", paramTypes));
+	
+		paramTypes[0] = java.lang.Double.class;
+		methods.add(scraper.getClass().getDeclaredMethod("roundUp", paramTypes));
 		
 		paramTypes = new Class[2];
 		paramTypes[0] = java.util.ArrayList.class;
@@ -71,6 +75,15 @@ public class WebScraperTest{
 			method.setAccessible(true);
 		}
 
+	@Test
+	public void roundingTest() throws Exception{
+		int upper = (int) methods.get(6).invoke(null, 2.7);
+		assertEquals(upper, 3);
+		
+		int lower = (int) methods.get(6).invoke(null,  2.034);
+		assertEquals(lower, 3);
+	}
+	
 	@Test
 	public void amazonTitle() throws Exception {
 		HtmlPage amazonPage = amazonClient.getPage(dir_ + "/amazon0.html");
@@ -185,30 +198,6 @@ public class WebScraperTest{
 		assertEquals(craigsNullPrice, 0.0, 1);
 	}
 	
-	@Test
-	public void craigsNextPage() throws Exception{
-		// next page exists with complete url
-		HtmlPage craigsPage = craigsClient.getPage(dir_ + "/craigslist0.html");	
-		String completeNextPageUrl = (String) methods.get(6).invoke(null, craigsPage);
-		String completeUrl = "https://newyork.craigslist.org/search/sss?s=120&query=socks&sort=rel";
-		assertEquals(completeNextPageUrl, completeUrl);
-		
-		// next page exists with incomplete url
-		HtmlPage craigs1Page = craigsClient.getPage(dir_ + "/craigslist1.html");	
-		String incompleteNextPageUrl = (String) methods.get(6).invoke(null, craigs1Page);
-		assertEquals(incompleteNextPageUrl, completeUrl);
-		
-		// null next page
-		HtmlPage craigs2Page = craigsClient.getPage(dir_ + "/craigslist2.html");	
-		String nullNextPageUrl = (String) methods.get(6).invoke(null, craigs2Page);
-		assertNull(nullNextPageUrl);
-		
-		// result return nothing
-		HtmlPage craigsEmpty = craigsClient.getPage(dir_ + "/craigslistEmpty.html");
-		String emptyNextPage = (String) methods.get(6).invoke(null, craigsEmpty);
-		assertNull(emptyNextPage);
-	}
-
 	@Test
 	public void craigsUrl() throws Exception{
 		HtmlPage craigsPage = craigsClient.getPage(dir_ + "/craigslist0.html");

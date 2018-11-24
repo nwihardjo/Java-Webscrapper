@@ -13,7 +13,7 @@ import com.gargoylesoftware.htmlunit.html.HtmlPage;
  * 	improve the performance of the webscraper. Class implements Callable, a base class which can be
  * 	executed by thread while support the ability to return value when called. The class is managed
  * 	by an executor service which instantiate a thread pool with the size of the number of amazon
- * 	items, to further enhance the performance and time consumed. 
+ * 	items, to further enhance the performance and reduce time consumed. 
  * 
  * @author nwihardjo
  *

@@ -22,8 +22,8 @@ import java.util.concurrent.Future;
 /**
  * Class which is used to scrape the queried item from 2 portals: amazon and newyork craigslist.
  * Title or name, price, posted date, url of the item, portal of each item were scraped.
- * This class massively parallelised the posted date retrieval of amazon items using multi-threading 
- * 	in java application, resulting in significantly improved performance of the webscraper.
+ * This class massively parallelised the posted date retrieval of amazon items and craigslist pagination
+ * 	using multi-threading in java application, resulting in significantly improved performance of the webscraper.
  * HtmlUnit web driver (netscape as its default) is used for the web driver.
  * 
  * @author nwihardjo
@@ -66,12 +66,13 @@ public class WebScraper {
 
 	/**
 	 * Get every items and its information from a single page of craigslist. Used as a method to support
-	 * 	pagination feature for craigslist portal, pages were retrieved by scrape method. 
+	 * 	pagination feature for craigslist portal, pages were retrieved by scrape method. Called by craigslist spiders
 	 * 
 	 * @param page a single page of the craigslist portal
 	 * @return  list of the item present in the page
+	 * @see craigsSpider
 	 */
-	private static ArrayList<Item> scrapePage(HtmlPage page) {
+	protected static ArrayList<Item> scrapePage(HtmlPage page) {
 		List<?> items = (List<?>) page.getByXPath("//li[@class='result-row']");
 		ArrayList<Item> craigsArrayList = new ArrayList<Item>();
 		for (int i = 0; i < items.size(); i++) {
@@ -141,22 +142,7 @@ public class WebScraper {
 	}
 	
 	/**
-	 * Retrieve the link to the next page of the craigslist portal. Used for pagination features
-	 * 
-	 * @param page HtmlPage of which the next page going to be searched
-	 * @return link to the next page, if any. Return null if there isn't one
-	 */
-	private static String getNextPage(HtmlPage page) {
-		HtmlAnchor nextPageUrl = (HtmlAnchor) page.getFirstByXPath("//a[@class='button next']");
-		if (nextPageUrl == null || nextPageUrl.getHrefAttribute().length() == 0) {
-			return null;
-		} else 
-			return (nextPageUrl.getHrefAttribute().startsWith(DEFAULT_URL)) ? nextPageUrl.getHrefAttribute() :
-				DEFAULT_URL + nextPageUrl.getHrefAttribute();
-	}
-	
-	/**
-	 * Scrape the url of the page of the item from either portal (amazon / craigslist).
+	 * Scrape the url of the page of the item from either portal (amazon / craigslist)
 	 * 
 	 * @param item HtmlElement consisting of a single item
 	 * @param portal name of the website where the passed item came from
@@ -248,31 +234,19 @@ public class WebScraper {
 		}
 	}
 
-	/*
-	// currently only for craigslist
-	public ArrayList<Item> handlePagination(HtmlPage page, Controller controller){
-		ArrayList<Item> craigsArrayList = new ArrayList<Item>();
-		int currentPage = 1;
-		try {
-			do {
-				if (currentPage != 1) 
-					page = client.getPage(getNextPage(page));
-//				controller.printConsole("\t Scraping page " + currentPage + "...\n");
-				craigsArrayList.addAll(scrapePage(page));
-				currentPage += 1;
-			} while (getNextPage(page) != null);
-		} catch (Exception e) {
-			e.printStackTrace();
-			return null;
-		}
-		
-		return craigsArrayList;
+	/**
+	 * Method called to round up Double type for craigslist page calculation
+	 * @param d Double variable to be rounded up
+	 * @return integer as a rounded up of the passed parameter
+	 */
+	private static Integer roundUp (Double d) {
+		return (d > d.intValue()) ? d.intValue() + 1 : d.intValue();
 	}
-	*/
+	
 	/**
 	 * Method to manage the workflow of scraping both portals based on the keyword specified. Handle amazon portal first, then the 
 	 * 	craigslist sequentially. Pagination of amazon is not handled, item's posted date retrieval is done concurrently, after all
-	 * 	of the items have been collected. Pagination of craigslist is handled sequentially.
+	 * 	of the items have been collected. Pagination of craigslist is handled concurrently.
 	 * 
 	 * @param keyword the keyword you want to search
 	 * @param controller instance of which call this function, to update user on the scraping progress
@@ -312,18 +286,35 @@ public class WebScraper {
 			HtmlPage page = client.getPage(searchUrl);
 			ArrayList<Item> craigsArrayList = new ArrayList<Item>();
 		
-			// handle pagination
-			int currentPage = 1;
-			do {
-				if (currentPage != 1) 
-					page = client.getPage(getNextPage(page));
-				controller.printConsole("\t Scraping page " + currentPage + "...\n");
-				craigsArrayList.addAll(scrapePage(page));
-				currentPage += 1;
-			} while (getNextPage(page) != null);
+			// handle pagination using multi-threading to support concurrency
+			// check whether craigslist has any listings on the item searched
+			if (page.getFirstByXPath("//span[@class='totalcount']") != null) {
+				Integer totResultCount = new Integer (((HtmlElement) page.getFirstByXPath("//span[@class='totalcount']")).asText());
+				String rangeResult = ((HtmlElement) page.getFirstByXPath("//span[@class='range']")).asText();
+				Integer numResultOnePage = new Integer (rangeResult.substring(rangeResult.lastIndexOf("-")+1).replaceAll(" ", ""));
+				Integer numPages = roundUp((double) (totResultCount / numResultOnePage));
+				
+				// scrape each of the craigslist page
+				ExecutorService craigsSpiderPool = Executors.newFixedThreadPool(numPages);
+				List<Future<ArrayList<Item>>> spiders = new ArrayList<Future<ArrayList<Item>>>();
+				for (int i = 1; i <= numPages; i++) {
+					String urlPage = DEFAULT_URL + "search/sss?s=" + i*numResultOnePage + "&query=" + URLEncoder.encode(keyword, "UTF-8") + "&sort=rel";
+					Callable<ArrayList<Item>> cSpider = new craigsSpider(urlPage);
+					spiders.add(craigsSpiderPool.submit(cSpider));
+					controller.printConsole("\t Scraping page " + i + " ... \n");
+				}
+				controller.printConsole("\t" + numPages + " pages of craigslist are being scraped in parallel / concurrently ...");
+				
+				// craigslist list of items retrieval
+				for (int i = 0; i < spiders.size(); i++) {
+					craigsArrayList.addAll(spiders.get(i).get());
+				}
+				craigsSpiderPool.shutdown();
+			}
 			
+			// sort result retrieved from both portals
 			Vector<Item> result = sortResult(amazonArrayList, craigsArrayList);
-			 
+	 
 			client.close();
 			System.out.println("DEBUG: scraping finished");
 			return result;
