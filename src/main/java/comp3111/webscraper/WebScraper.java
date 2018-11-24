@@ -291,9 +291,9 @@ public class WebScraper {
 			if (page.getFirstByXPath("//span[@class='totalcount']") != null) {
 				Integer totResultCount = new Integer (((HtmlElement) page.getFirstByXPath("//span[@class='totalcount']")).asText());
 				String rangeResult = ((HtmlElement) page.getFirstByXPath("//span[@class='range']")).asText();
-				Integer numResultOnePage = new Integer (rangeResult.substring(rangeResult.lastIndexOf("-")+1).replaceAll(" ", ""));
-				Integer numPages = roundUp((double) (totResultCount / numResultOnePage));
-				
+				Double numResultOnePage = new Double (rangeResult.substring(rangeResult.lastIndexOf("-")+1).replaceAll(" ", ""));
+				Integer numPages = roundUp(totResultCount / numResultOnePage);
+				System.out.println(totResultCount + " " + numResultOnePage + " " + numPages + " harusnya " + totResultCount/numResultOnePage);
 				// scrape each of the craigslist page
 				ExecutorService craigsSpiderPool = Executors.newFixedThreadPool(numPages);
 				List<Future<ArrayList<Item>>> spiders = new ArrayList<Future<ArrayList<Item>>>();
