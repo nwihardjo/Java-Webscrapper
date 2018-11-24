@@ -10,10 +10,10 @@ import com.gargoylesoftware.htmlunit.html.HtmlPage;
 
 /**
  * Class implemented to provide concurrency on amazon portal scraping, which significantly
- * 	improve the performance of the websraper. Class implements Callable, a base class which can be
+ * 	improve the performance of the webscraper. Class implements Callable, a base class which can be
  * 	executed by thread while support the ability to return value when called. The class is managed
  * 	by an executor service which instantiate a thread pool with the size of the number of amazon
- * 	items, to further enhance the performance and time consumed. 
+ * 	items, to further enhance the performance and reduce time consumed. 
  * 
  * @author nwihardjo
  *
@@ -65,7 +65,7 @@ public class Spider implements Callable<Date> {
 	 * @return posted date of the service. Return null when no information on posted date available
 	 * @see parseDate
 	 */
-	private Date scrapeService(HtmlPage page) {
+	private static Date scrapeService(HtmlPage page) {
 		HtmlElement postedDate = (HtmlElement) page.getFirstByXPath("//div[@class='content']//*[contains(text(),'Date')]/parent::li");
 		
 		// if else condition += postedDate.asText() != ""
@@ -81,7 +81,7 @@ public class Spider implements Callable<Date> {
 	 * @param strDate date scraped from the html page
 	 * @return Date object of the posted date
 	 */
-	public Date parseDate(String strDate) {
+	private static Date parseDate(String strDate) {
 		SimpleDateFormat format = new SimpleDateFormat("MMMM dd, yyyy");
 		try {
 			return format.parse(strDate);
