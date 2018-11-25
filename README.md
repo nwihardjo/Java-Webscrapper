@@ -24,13 +24,13 @@
 
 ---
 
-#TL;DR
+## TL;DR
 WebScraper to scrape both amazon and newyork craigslist website based on the keyword specified. Utilised multi-threading to 
 support concurrency on craiglist pagination and amazon items' posted date retrieval which significantly improve the performance.
 
 ---
 
-# Dependencies
+## Dependencies
 
 1. Java 8 JDK with Gradle
 1. JavaFX for GUI framework
@@ -39,11 +39,11 @@ support concurrency on craiglist pagination and amazon items' posted date retrie
 
 ---
 
-# Running the programme
+## Running the programme
 
 We configure the project with Gradle. Gradle can be considered as Makefile like tools that streamline the compilation for you.
 
-## Compile with Windows Command Prompt 
+### Compile with Windows Command Prompt 
 
 - Goto your project root folder
 - Type `gradlew run`. This will build and run the project. 
@@ -52,7 +52,7 @@ If you want to just rerun the project without rebuilding it,
 - Go to the project root folder `build\jar\` 
 - Double click jar file (e.g. `webscraper-0.1.0.jar`) yes, you need a GUI screen to run it. 
 
-## Compile with Mac/Linux terminal 
+### Compile with Mac/Linux terminal 
 
 - Goto your project root folder
 - `./gradlew build`. This will build the project.
@@ -62,7 +62,7 @@ If you want to just rerun the project without rebuilding it,
 - Go to the folder `build/jar/` 
 - Double click jar file (e.g. `webscraper-0.1.0.jar`) or simply `./gradlew run`
 
-### Unit test and jacoco coverage report
+#### Unit test and jacoco coverage report
 
 - Go to the project root directory
 - `./gradlew test jacocoTestReport` to generate the test report anc coverage. It will run all unit tests and generate the coverage report 
@@ -72,7 +72,7 @@ If you want to just rerun the project without rebuilding it,
 
 Some of the unit tests use cached pages from both portals. Testing utilises Reflection method to unit test private functions (not a good practise i know).
 
-### Documentation / javadoc
+#### Documentation / javadoc
 
 - In project root directory, `./gradlew javadoc` to generate javadoc
 - Documentation is available at `./build/docs/javadoc/index.html`.
