@@ -219,21 +219,23 @@ public class Controller {
             @Override
             public void handle(MouseEvent click) {
                 if (click.getClickCount() == 1) {
-                    @SuppressWarnings("rawtypes")
-                    //System.out.println(itemTable.getSelectionModel().getSelectedCells().get(0));
-                    TablePosition pos = (TablePosition) itemTable.getSelectionModel().getSelectedCells().get(0);
-                    int row = pos.getRow();
-                    int col = pos.getColumn();
-                    @SuppressWarnings("rawtypes")
-                    TableColumn column = pos.getTableColumn();
-                    if (col == 2) {
-                        String val = column.getCellData(row).toString();
-                        try {
-                            Desktop.getDesktop().browse(new URI(val));
-                        } catch (IOException e1) {
-                            e1.printStackTrace();
-                        } catch (URISyntaxException e1) {
-                            e1.printStackTrace();
+                    //@SuppressWarnings("rawtypes")
+                    if (itemTable.getSelectionModel().isEmpty()) {}
+                    else {
+                        TablePosition pos = (TablePosition) itemTable.getSelectionModel().getSelectedCells().get(0);
+                        int row = pos.getRow();
+                        int col = pos.getColumn();
+                        //@SuppressWarnings("rawtypes")
+                        TableColumn column = pos.getTableColumn();
+                        if (col == 2) {
+                            String val = column.getCellData(row).toString();
+                            try {
+                                Desktop.getDesktop().browse(new URI(val));
+                            } catch (IOException e1) {
+                                e1.printStackTrace();
+                            } catch (URISyntaxException e1) {
+                                e1.printStackTrace();
+                            }
                         }
                     }
                 }
