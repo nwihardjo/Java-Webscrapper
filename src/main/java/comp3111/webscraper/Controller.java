@@ -198,8 +198,7 @@ public class Controller {
     		scraperResult = result;
             refreshSummaryTab();
             refreshTableTab(scraperResult);
-    		//togglePrimarySearch();
-            toggleRefineSearch();
+            enableRefineSearch();
             lastSearchMenuItem.setDisable(false);
     	});
     	thread.start();
@@ -255,7 +254,6 @@ public class Controller {
         System.out.println("refineSearch: " + refineKeyword.getText());
         String refineStr = refineKeyword.getText().toLowerCase();
         Iterator<Item> resultItr = scraperResult.iterator();
-//        System.out.println("DEBUG: Before refining, count is: " + scraperResult.size());
         while (resultItr.hasNext()) {
             Item currentItem = resultItr.next();
             String itemTitle = currentItem.getTitle().toLowerCase();
@@ -263,15 +261,9 @@ public class Controller {
                 resultItr.remove();
             }
         }
-//        System.out.println("DEBUG: After refining, count is: " + scraperResult.size());
-//        System.out.println("DEBUG: After refining, the following items are");
-//        for (Item item : scraperResult) {
-//            System.out.println(item.getTitle());
-//        }
         textAreaConsole.clear();
         refreshSummaryTab();
-        //togglePrimarySearch();
-        toggleRefineSearch();
+        disableRefineSearch();
         printOutputToConsole();
     }
 
@@ -294,27 +286,14 @@ public class Controller {
         setLabelLatest(scraperResult);
     }
 
-    private void togglePrimarySearch() {
-        if (textFieldKeyword.isDisabled()) {
-            textFieldKeyword.setDisable(false);
-            goButton.setDisable(false);
-        }
-        else {
-            textFieldKeyword.setDisable(true);
-            goButton.setDisable(true);
-        }
-
+    private void enableRefineSearch() {
+        refineKeyword.setDisable(false);
+        refineButton.setDisable(false);
     }
 
-    private void toggleRefineSearch() {
-        if (refineKeyword.isDisabled()) {
-            refineKeyword.setDisable(false);
-            refineButton.setDisable(false);
-        }
-        else {
-            refineKeyword.setDisable(true);
-            refineButton.setDisable(true);
-        }
+    private void disableRefineSearch() {
+        refineKeyword.setDisable(true);
+        refineButton.setDisable(true);
     }
 
     private void printOutputToConsole() {
