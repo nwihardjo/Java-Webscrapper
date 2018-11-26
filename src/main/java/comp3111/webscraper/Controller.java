@@ -168,7 +168,7 @@ public class Controller {
 
     @FXML
     private void displaySummary(Event event) {
-        System.out.println("Summary tab selected");
+        //System.out.println("Summary tab selected");
     }
 
 
