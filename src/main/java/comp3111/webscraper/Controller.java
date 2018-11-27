@@ -265,6 +265,7 @@ public class Controller {
         }
         textAreaConsole.clear();
         refreshSummaryTab();
+        refreshTableTab(scraperResult);
         disableRefineSearch();
         printOutputToConsole();
     }
@@ -331,12 +332,16 @@ public class Controller {
             totalPrice += item.getPrice();
             itemCount++;
         }
+        boolean allItemsAreZero = (itemCount == 0);
+        if (allItemsAreZero)
+            return 0.0;
         return totalPrice / itemCount;
     }
 
     private void setLabelPrice(double avgPrice) {
         boolean priceAvailable = (avgPrice != 0.0);
-        if (priceAvailable)
+        boolean priceAvailableButZeros = (avgPrice == 0.0 && scraperResult.size() != 0);
+        if (priceAvailable || priceAvailableButZeros)
             labelPrice.setText(String.format("%.2f", avgPrice));
         else
             labelPrice.setText("-");
@@ -358,6 +363,9 @@ public class Controller {
             if (item.getPrice() < lowestPrice)
                 lowestPrice = item.getPrice();
         }
+        boolean itemPricesAreZeros = (lowestPrice == 100000000.0);
+        if (itemPricesAreZeros)
+            lowestPrice = 0.0;
         return lowestPrice;
     }
 
@@ -365,7 +373,8 @@ public class Controller {
         // if priceAvailable set hyperlink to page (getItemWithLowestPrice)
         // else display "-"
         boolean priceAvailable = (lowestPrice != 0.0);
-        if (priceAvailable) {
+        boolean priceAvailableButZeros = (lowestPrice == 0.0 && scraperResult.size() != 0);
+        if (priceAvailable || priceAvailableButZeros) {
             labelMin.setText(String.format("%.2f", lowestPrice));
             showLowestPricedItemInBrowser(scraperResult);
         }
