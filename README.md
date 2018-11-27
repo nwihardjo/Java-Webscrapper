@@ -19,18 +19,18 @@
 7. Main price of *amazon* item is used, not the 'more buying options' or 'offer price' (usually cheaper price of same item listed in the portal from different seller). Average of the main price is used when the main price is a range between two prices (usually due to different sizes, colours, etc). Cheapest 'more buying options' or 'offer' price is used when no information available on the main price, as a rough estimate on the price of the item
 8. Posted date from *amazon* portal is scraped from the date of which the item is posted for the first time
 9. Service listing on *amazon* portal (not an item) is handled as well
-
+10. If there are results found but prices are all 0, average selling price and lowest selling price will be displayed as 0.0 as opposed to "-". "-" will only be displayed if there are no results found
 
 
 ---
 
-#TL;DR
+## TL;DR
 WebScraper to scrape both amazon and newyork craigslist website based on the keyword specified. Utilised multi-threading to 
 support concurrency on craiglist pagination and amazon items' posted date retrieval which significantly improve the performance.
 
 ---
 
-# Dependencies
+## Dependencies
 
 1. Java 8 JDK with Gradle
 1. JavaFX for GUI framework
@@ -39,11 +39,11 @@ support concurrency on craiglist pagination and amazon items' posted date retrie
 
 ---
 
-# Running the programme
+## Running the programme
 
 We configure the project with Gradle. Gradle can be considered as Makefile like tools that streamline the compilation for you.
 
-## Compile with Windows Command Prompt 
+### Compile with Windows Command Prompt 
 
 - Goto your project root folder
 - Type `gradlew run`. This will build and run the project. 
@@ -52,7 +52,7 @@ If you want to just rerun the project without rebuilding it,
 - Go to the project root folder `build\jar\` 
 - Double click jar file (e.g. `webscraper-0.1.0.jar`) yes, you need a GUI screen to run it. 
 
-## Compile with Mac/Linux terminal 
+### Compile with Mac/Linux terminal 
 
 - Goto your project root folder
 - `./gradlew build`. This will build the project.
@@ -62,7 +62,7 @@ If you want to just rerun the project without rebuilding it,
 - Go to the folder `build/jar/` 
 - Double click jar file (e.g. `webscraper-0.1.0.jar`) or simply `./gradlew run`
 
-### Unit test and jacoco coverage report
+#### Unit test and jacoco coverage report
 
 - Go to the project root directory
 - `./gradlew test jacocoTestReport` to generate the test report anc coverage. It will run all unit tests and generate the coverage report 
@@ -72,7 +72,7 @@ If you want to just rerun the project without rebuilding it,
 
 Some of the unit tests use cached pages from both portals. Testing utilises Reflection method to unit test private functions (not a good practise i know).
 
-### Documentation / javadoc
+#### Documentation / javadoc
 
 - In project root directory, `./gradlew javadoc` to generate javadoc
 - Documentation is available at `./build/docs/javadoc/index.html`.

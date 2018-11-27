@@ -168,7 +168,7 @@ public class Controller {
 
     @FXML
     private void displaySummary(Event event) {
-        System.out.println("Summary tab selected");
+        //System.out.println("Summary tab selected");
     }
 
 
@@ -198,8 +198,7 @@ public class Controller {
     		scraperResult = result;
             refreshSummaryTab();
             refreshTableTab(scraperResult);
-    		//togglePrimarySearch();
-            toggleRefineSearch();
+            enableRefineSearch();
             lastSearchMenuItem.setDisable(false);
     	});
     	thread.start();
@@ -219,21 +218,23 @@ public class Controller {
             @Override
             public void handle(MouseEvent click) {
                 if (click.getClickCount() == 1) {
-                    @SuppressWarnings("rawtypes")
-                    //System.out.println(itemTable.getSelectionModel().getSelectedCells().get(0));
-                    TablePosition pos = (TablePosition) itemTable.getSelectionModel().getSelectedCells().get(0);
-                    int row = pos.getRow();
-                    int col = pos.getColumn();
-                    @SuppressWarnings("rawtypes")
-                    TableColumn column = pos.getTableColumn();
-                    if (col == 2) {
-                        String val = column.getCellData(row).toString();
-                        try {
-                            Desktop.getDesktop().browse(new URI(val));
-                        } catch (IOException e1) {
-                            e1.printStackTrace();
-                        } catch (URISyntaxException e1) {
-                            e1.printStackTrace();
+                    //@SuppressWarnings("rawtypes")
+                    if (itemTable.getSelectionModel().isEmpty()) {}
+                    else {
+                        TablePosition pos = (TablePosition) itemTable.getSelectionModel().getSelectedCells().get(0);
+                        int row = pos.getRow();
+                        int col = pos.getColumn();
+                        //@SuppressWarnings("rawtypes")
+                        TableColumn column = pos.getTableColumn();
+                        if (col == 2) {
+                            String val = column.getCellData(row).toString();
+                            try {
+                                Desktop.getDesktop().browse(new URI(val));
+                            } catch (IOException e1) {
+                                e1.printStackTrace();
+                            } catch (URISyntaxException e1) {
+                                e1.printStackTrace();
+                            }
                         }
                     }
                 }
@@ -255,7 +256,6 @@ public class Controller {
         System.out.println("refineSearch: " + refineKeyword.getText());
         String refineStr = refineKeyword.getText().toLowerCase();
         Iterator<Item> resultItr = scraperResult.iterator();
-//        System.out.println("DEBUG: Before refining, count is: " + scraperResult.size());
         while (resultItr.hasNext()) {
             Item currentItem = resultItr.next();
             String itemTitle = currentItem.getTitle().toLowerCase();
@@ -263,15 +263,10 @@ public class Controller {
                 resultItr.remove();
             }
         }
-//        System.out.println("DEBUG: After refining, count is: " + scraperResult.size());
-//        System.out.println("DEBUG: After refining, the following items are");
-//        for (Item item : scraperResult) {
-//            System.out.println(item.getTitle());
-//        }
         textAreaConsole.clear();
         refreshSummaryTab();
-        //togglePrimarySearch();
-        toggleRefineSearch();
+        refreshTableTab(scraperResult);
+        disableRefineSearch();
         printOutputToConsole();
     }
 
@@ -294,27 +289,14 @@ public class Controller {
         setLabelLatest(scraperResult);
     }
 
-    private void togglePrimarySearch() {
-        if (textFieldKeyword.isDisabled()) {
-            textFieldKeyword.setDisable(false);
-            goButton.setDisable(false);
-        }
-        else {
-            textFieldKeyword.setDisable(true);
-            goButton.setDisable(true);
-        }
-
+    private void enableRefineSearch() {
+        refineKeyword.setDisable(false);
+        refineButton.setDisable(false);
     }
 
-    private void toggleRefineSearch() {
-        if (refineKeyword.isDisabled()) {
-            refineKeyword.setDisable(false);
-            refineButton.setDisable(false);
-        }
-        else {
-            refineKeyword.setDisable(true);
-            refineButton.setDisable(true);
-        }
+    private void disableRefineSearch() {
+        refineKeyword.setDisable(true);
+        refineButton.setDisable(true);
     }
 
     private void printOutputToConsole() {
@@ -350,12 +332,16 @@ public class Controller {
             totalPrice += item.getPrice();
             itemCount++;
         }
+        boolean allItemsAreZero = (itemCount == 0);
+        if (allItemsAreZero)
+            return 0.0;
         return totalPrice / itemCount;
     }
 
     private void setLabelPrice(double avgPrice) {
         boolean priceAvailable = (avgPrice != 0.0);
-        if (priceAvailable)
+        boolean priceAvailableButZeros = (avgPrice == 0.0 && scraperResult.size() != 0);
+        if (priceAvailable || priceAvailableButZeros)
             labelPrice.setText(String.format("%.2f", avgPrice));
         else
             labelPrice.setText("-");
@@ -377,6 +363,9 @@ public class Controller {
             if (item.getPrice() < lowestPrice)
                 lowestPrice = item.getPrice();
         }
+        boolean itemPricesAreZeros = (lowestPrice == 100000000.0);
+        if (itemPricesAreZeros)
+            lowestPrice = 0.0;
         return lowestPrice;
     }
 
@@ -384,7 +373,8 @@ public class Controller {
         // if priceAvailable set hyperlink to page (getItemWithLowestPrice)
         // else display "-"
         boolean priceAvailable = (lowestPrice != 0.0);
-        if (priceAvailable) {
+        boolean priceAvailableButZeros = (lowestPrice == 0.0 && scraperResult.size() != 0);
+        if (priceAvailable || priceAvailableButZeros) {
             labelMin.setText(String.format("%.2f", lowestPrice));
             showLowestPricedItemInBrowser(scraperResult);
         }
