@@ -181,21 +181,10 @@ public class Controller {
     		textAreaConsole.clear();
     		System.out.println("actionSearch: " + textFieldKeyword.getText());
     		List<Item> result = scraper.scrape(textFieldKeyword.getText(), this);
-            String output = "";
             lastOutput = currentOutput;
             lastResult = scraperResult;
-    		// prevent thrown exception when there's no result
-    		if (result != null) {
-	    		for (Item item : result) {
-	    			output += item.getTitle() + "\t" + item.getPrice() + "\t" + item.getUrl() + "\n";
-	    		}
-            }
-            
-            currentOutput = output;
-
-    		textAreaConsole.clear();
-    		printConsole(output); 
-    		scraperResult = result;
+            scraperResult = result;
+            printOutputToConsole();
             refreshSummaryTab();
             refreshTableTab(scraperResult);
             enableRefineSearch();
@@ -254,6 +243,14 @@ public class Controller {
     @FXML
     private void refineSearch() {
         System.out.println("refineSearch: " + refineKeyword.getText());
+        checkIfItemsContainRefineKeyWord();
+        printOutputToConsole();
+        refreshSummaryTab();
+        refreshTableTab(scraperResult);
+        disableRefineSearch();
+    }
+
+    private void checkIfItemsContainRefineKeyWord() {
         String refineStr = refineKeyword.getText().toLowerCase();
         Iterator<Item> resultItr = scraperResult.iterator();
         while (resultItr.hasNext()) {
@@ -263,11 +260,6 @@ public class Controller {
                 resultItr.remove();
             }
         }
-        textAreaConsole.clear();
-        refreshSummaryTab();
-        refreshTableTab(scraperResult);
-        disableRefineSearch();
-        printOutputToConsole();
     }
 
     private void refreshSummaryTab() {
@@ -300,11 +292,13 @@ public class Controller {
     }
 
     private void printOutputToConsole() {
+        textAreaConsole.clear();
         String output = "";
         for (Item item : scraperResult) {
             output += item.getTitle() + "\t" + item.getPrice() + "\t" + item.getUrl() + "\n";
         }
         printConsole(output);
+        currentOutput = output;
     }
 
     private int getItemCount(List<Item> scraperResult) {
