@@ -19,7 +19,7 @@
 7. Main price of *amazon* item is used, not the 'more buying options' or 'offer price' (usually cheaper price of same item listed in the portal from different seller). Average of the main price is used when the main price is a range between two prices (usually due to different sizes, colours, etc). Cheapest 'more buying options' or 'offer' price is used when no information available on the main price, as a rough estimate on the price of the item
 8. Posted date from *amazon* portal is scraped from the date of which the item is posted for the first time
 9. Service listing on *amazon* portal (not an item) is handled as well
-
+10. If there are results found but prices are all 0, average selling price and lowest selling price will be displayed as 0.0 as opposed to "-". "-" will only be displayed if there are no results found
 
 
 ---
