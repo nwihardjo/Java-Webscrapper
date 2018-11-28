@@ -26,6 +26,7 @@ import java.awt.*;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Date;
@@ -176,32 +177,26 @@ public class Controller {
      * Called when the search button is pressed.
      */
     @FXML
-    private void actionSearch() {
-    	Thread thread = new Thread(() -> {
-    		textAreaConsole.clear();
-    		System.out.println("actionSearch: " + textFieldKeyword.getText());
-    		List<Item> result = scraper.scrape(textFieldKeyword.getText(), this);
-            String output = "";
-            lastOutput = currentOutput;
-            lastResult = scraperResult;
-    		// prevent thrown exception when there's no result
-    		if (result != null) {
-	    		for (Item item : result) {
-	    			output += item.getTitle() + "\t" + item.getPrice() + "\t" + item.getUrl() + "\n";
-	    		}
-            }
-            
-            currentOutput = output;
-
-    		textAreaConsole.clear();
-    		printConsole(output); 
-    		scraperResult = result;
-            refreshSummaryTab();
-            refreshTableTab(scraperResult);
-            enableRefineSearch();
-            lastSearchMenuItem.setDisable(false);
-    	});
+    void actionSearch() {
+    	Thread thread = new Thread(() ->
+    	    performSearchFunctionalities()
+    	);
     	thread.start();
+    }
+    // TODO: refactor function above and try testing after initializing scraperresult to 0
+
+    void performSearchFunctionalities() {
+        textAreaConsole.clear();
+        System.out.println("actionSearch: " + textFieldKeyword.getText());
+        List<Item> result = scraper.scrape(textFieldKeyword.getText(), this);
+        lastOutput = currentOutput;
+        lastResult = scraperResult;
+        scraperResult = result;
+        printOutputToConsole();
+        refreshSummaryTab();
+        refreshTableTab(scraperResult);
+        enableRefineSearch();
+        lastSearchMenuItem.setDisable(false);
     }
 
     private void refreshTableTab(List<Item> dummy) {
@@ -243,17 +238,21 @@ public class Controller {
     }
 
     // enable asynchronous printing on console tab
-    public void printConsole (String message) {
-    	if (Platform.isFxApplicationThread()) {
-    		textAreaConsole.appendText(message);
-    	} else {
-    		Platform.runLater(() -> textAreaConsole.appendText(message));
-    	}
+    void printConsole (String message) {
+        textAreaConsole.appendText(message);
     }
 
     @FXML
-    private void refineSearch() {
+    void refineSearch() {
         System.out.println("refineSearch: " + refineKeyword.getText());
+        checkIfItemsContainRefineKeyWord();
+        printOutputToConsole();
+        refreshSummaryTab();
+        refreshTableTab(scraperResult);
+        disableRefineSearch();
+    }
+
+    private void checkIfItemsContainRefineKeyWord() {
         String refineStr = refineKeyword.getText().toLowerCase();
         Iterator<Item> resultItr = scraperResult.iterator();
         while (resultItr.hasNext()) {
@@ -263,11 +262,6 @@ public class Controller {
                 resultItr.remove();
             }
         }
-        textAreaConsole.clear();
-        refreshSummaryTab();
-        refreshTableTab(scraperResult);
-        disableRefineSearch();
-        printOutputToConsole();
     }
 
     private void refreshSummaryTab() {
@@ -281,7 +275,7 @@ public class Controller {
 
     private void updateSummaryDetails() {
         int itemCount = getItemCount(scraperResult);
-        double avgPrice = getAvgPrice();
+        double avgPrice = getAvgPrice(scraperResult);
         double lowestPrice = getLowestPrice(scraperResult);
         setLabelCount(itemCount);
         setLabelPrice(avgPrice);
@@ -300,14 +294,21 @@ public class Controller {
     }
 
     private void printOutputToConsole() {
+        textAreaConsole.clear();
+        String output = produceConsoleOutput(scraperResult);
+        printConsole(output);
+        currentOutput = output;
+    }
+
+    String produceConsoleOutput(List<Item> scraperResult) {
         String output = "";
         for (Item item : scraperResult) {
             output += item.getTitle() + "\t" + item.getPrice() + "\t" + item.getUrl() + "\n";
         }
-        printConsole(output);
+        return output;
     }
 
-    private int getItemCount(List<Item> scraperResult) {
+    int getItemCount(List<Item> scraperResult) {
         return scraperResult.size();
     }
 
@@ -315,7 +316,7 @@ public class Controller {
         labelCount.setText(Integer.toString(itemCount));
     }
 
-    private double getAvgPrice() {
+    double getAvgPrice(List<Item> scraperResult) {
         boolean resultFound = (scraperResult.size() != 0);
         if (resultFound)
             return countAvgPrice(scraperResult);
@@ -323,7 +324,7 @@ public class Controller {
             return 0.0;
     }
 
-    private double countAvgPrice(List<Item> scraperResult) {
+    double countAvgPrice(List<Item> scraperResult) {
         double totalPrice = 0.0;
         int itemCount = 0;
         for (Item item : scraperResult) {
@@ -339,15 +340,26 @@ public class Controller {
     }
 
     private void setLabelPrice(double avgPrice) {
-        boolean priceAvailable = (avgPrice != 0.0);
-        boolean priceAvailableButZeros = (avgPrice == 0.0 && scraperResult.size() != 0);
-        if (priceAvailable || priceAvailableButZeros)
+        if (priceAvailable(scraperResult) || priceAvailableButZeros(scraperResult))
             labelPrice.setText(String.format("%.2f", avgPrice));
         else
             labelPrice.setText("-");
     }
 
-    private double getLowestPrice(List<Item> scraperResult) {
+    boolean priceAvailable(List<Item> scraperResult) {
+        return (getAvgPrice(scraperResult) != 0.0);
+    }
+
+    boolean priceAvailableButZeros(List<Item> scraperResult) {
+        if (scraperResult.size() == 0)
+            return false;
+        else if (getAvgPrice(scraperResult) == 0.0) {
+            return false;
+        }
+        return true;
+    }
+
+    double getLowestPrice(List<Item> scraperResult) {
         boolean resultFound = (scraperResult.size() != 0);
         if (resultFound)
             return countLowestPrice(scraperResult);
@@ -372,9 +384,7 @@ public class Controller {
     private void setLabelMin(double lowestPrice, List<Item> scraperResult) {
         // if priceAvailable set hyperlink to page (getItemWithLowestPrice)
         // else display "-"
-        boolean priceAvailable = (lowestPrice != 0.0);
-        boolean priceAvailableButZeros = (lowestPrice == 0.0 && scraperResult.size() != 0);
-        if (priceAvailable || priceAvailableButZeros) {
+        if (priceAvailable(scraperResult) || priceAvailableButZeros(scraperResult)) {
             labelMin.setText(String.format("%.2f", lowestPrice));
             showLowestPricedItemInBrowser(scraperResult);
         }
@@ -397,11 +407,12 @@ public class Controller {
         });
     }
 
-    private String getLowestPriceURI(List<Item> scraperResult) {
+    String getLowestPriceURI(List<Item> scraperResult) {
         /*
          * Returns the first item with the lowest price
          * if there are two items with the same lowest price,
          * function returns the first one.
+         * if invalid result, return empty string
          */
         double lowestPrice = getLowestPrice(scraperResult);
         String url = "";
@@ -415,12 +426,18 @@ public class Controller {
     }
 
     private void setLabelLatest(List<Item> scraperResult) {
-        boolean itemsFound = (getItemCount(scraperResult) != 0);
-        if (itemsFound) {
+        if (itemsFound(scraperResult)) {
             showLatestPostInBrowser(scraperResult);
         }
         else
             labelLatest.setText("-");
+    }
+
+    boolean itemsFound(List<Item> scraperResult) {
+        if (getItemCount(scraperResult) == 0)
+            return false;
+        else
+            return true;
     }
 
     private void showLatestPostInBrowser(List<Item> scraperResult) {
