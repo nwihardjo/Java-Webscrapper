@@ -244,6 +244,7 @@ public class Controller {
 
     // enable asynchronous printing on console tab
     public void printConsole (String message) {
+//    	textAreaConsole.appendText(message);
     	if (Platform.isFxApplicationThread()) {
     		textAreaConsole.appendText(message);
     	} else {

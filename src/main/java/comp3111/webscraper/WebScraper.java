@@ -235,12 +235,58 @@ public class WebScraper {
 	}
 
 	/**
-	 * Method called to round up Double type for craigslist page calculation
-	 * @param d Double variable to be rounded up
-	 * @return integer as a rounded up of the passed parameter
+	 * Main framework method which is used to scrape and handle concurrency for scraping craigslist while handling the
+	 * 	pagination. Instantiate a thread pool which able to cut down the time of scraping significantly by parallelised
+	 * 	the scraping
+	 * @param pageStatistics integer array which contain the total number of pages and the number of searches in a page
+	 * @param keyword of the search
+	 * @param firstPageUrl 
+	 * @return arraylist of all items scraped through all pages
 	 */
-	private static Integer roundUp (Double d) {
-		return (d > d.intValue()) ? d.intValue() + 1 : d.intValue();
+	private static ArrayList<Item> handlePagination (Integer[] pageStatistics, String keyword, String firstPageUrl){
+		ArrayList<Item> craigsArrayList = new ArrayList<Item>();
+		try {
+			ExecutorService craigsSpiderPool = Executors.newFixedThreadPool(pageStatistics[0]);
+			List<Future<ArrayList<Item>>> spiders = new ArrayList<Future<ArrayList<Item>>>();
+			
+			// for scraping the first page
+			Callable<ArrayList<Item>> cSpider = new craigsSpider(firstPageUrl);
+			spiders.add(craigsSpiderPool.submit(cSpider));
+					
+			// scrape the next pages
+			for (int i = 2; i <= pageStatistics[0]; i++) {
+				String urlPage = DEFAULT_URL + "search/sss?s=" + (i-1)*pageStatistics[1] + "&query=" + keyword + "&sort=rel";
+				Callable<ArrayList<Item>> cSpider_ = new craigsSpider(urlPage);
+				spiders.add(craigsSpiderPool.submit(cSpider_));
+			}
+			
+			// craigslist's list of items retrieval
+			for (int i = 0; i < spiders.size(); i++) {
+				craigsArrayList.addAll(spiders.get(i).get());
+			}
+			craigsSpiderPool.shutdown();		
+			return craigsArrayList;
+		} catch (Exception e) { 
+			return craigsArrayList;
+		}
+	}
+	
+	/**
+	 * Scrape the page statistics given a htmlpage, used only for craigslist portal
+	 * @param page
+	 * @return array integer which contain the total number of pages resulted from searching the keyword, and the number
+	 * 	of items in each page
+	 */
+	private static Integer[] getPageStatistics (HtmlPage page) {
+		Integer[] ret = new Integer[2];
+		
+		Integer totResultCount = new Integer (((HtmlElement) page.getFirstByXPath("//span[@class='totalcount']")).asText());
+		String rangeResult = ((HtmlElement) page.getFirstByXPath("//span[@class='range']")).asText();
+		Integer numResultOnePage = new Integer (rangeResult.substring(rangeResult.lastIndexOf("-")+1).replaceAll(" ", ""));
+		
+		ret[0] = (totResultCount % numResultOnePage != 0) ? (totResultCount / numResultOnePage)+1 : (totResultCount/numResultOnePage);
+		ret[1] = numResultOnePage;
+		return ret;
 	}
 	
 	/**
@@ -274,7 +320,7 @@ public class WebScraper {
 				amazonArrayList.add(item);
 			}
 			// retrieve postedDate for amazonItems
-			controller.printConsole("\t Scraping amazon's items page... \n");	
+			controller.printConsole("\t Scraping " + amazonResult.size() + " amazon's item pages in parallel (if any) ... \n");	
 			amazonArrayList = deploySpiders(amazonArrayList);
 			
 			
@@ -289,27 +335,9 @@ public class WebScraper {
 			// handle pagination using multi-threading to support concurrency
 			// check whether craigslist has any listings on the item searched
 			if (page.getFirstByXPath("//span[@class='totalcount']") != null) {
-				Integer totResultCount = new Integer (((HtmlElement) page.getFirstByXPath("//span[@class='totalcount']")).asText());
-				String rangeResult = ((HtmlElement) page.getFirstByXPath("//span[@class='range']")).asText();
-				Double numResultOnePage = new Double (rangeResult.substring(rangeResult.lastIndexOf("-")+1).replaceAll(" ", ""));
-				Integer numPages = roundUp(totResultCount / numResultOnePage);
-				
-				// scrape each of the craigslist page
-				ExecutorService craigsSpiderPool = Executors.newFixedThreadPool(numPages);
-				List<Future<ArrayList<Item>>> spiders = new ArrayList<Future<ArrayList<Item>>>();
-				for (int i = 1; i <= numPages; i++) {
-					String urlPage = DEFAULT_URL + "search/sss?s=" + i*numResultOnePage + "&query=" + URLEncoder.encode(keyword, "UTF-8") + "&sort=rel";
-					Callable<ArrayList<Item>> cSpider = new craigsSpider(urlPage);
-					spiders.add(craigsSpiderPool.submit(cSpider));
-					controller.printConsole("\t Scraping page " + i + " ... \n");
-				}
-				controller.printConsole("\t" + numPages + " pages of craigslist are being scraped in parallel / concurrently ...");
-				
-				// craigslist list of items retrieval
-				for (int i = 0; i < spiders.size(); i++) {
-					craigsArrayList.addAll(spiders.get(i).get());
-				}
-				craigsSpiderPool.shutdown();
+				Integer[] pageStatistics = getPageStatistics(page);
+				controller.printConsole("\t" + pageStatistics[0] + " pages of craigslist are being scraped in parallel ...");
+				craigsArrayList.addAll(handlePagination(pageStatistics, URLEncoder.encode(keyword, "UTF-8"), searchUrl));
 			}
 			
 			// sort result retrieved from both portals

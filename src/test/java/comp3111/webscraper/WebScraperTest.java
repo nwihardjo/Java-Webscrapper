@@ -233,18 +233,6 @@ public class WebScraperTest{
 		ArrayList<Item> craigsAL = (ArrayList<Item>) methods.get(5).invoke(null, craigsPage);
 		assertEquals(craigsAL.size(), 120);
 	}
-
-	/*
-	@Test
-	public void craigsPagination() throws Exception{
-		HtmlPage craigsPage = craigsClient.getPage(dir_ + "/craigslistEmpty.html");
-		WebScraper scraper = new WebScraper();
-		Controller controller = new Controller();
-		
-		ArrayList<Item> craigsItems = scraper.handlePagination(craigsPage, controller);
-		assertEquals(craigsItems.size(), 0);
-	}
-	*/
 	
 	@Test
 	public void resultSorting() throws Exception{
