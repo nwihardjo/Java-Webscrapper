@@ -316,7 +316,7 @@ public class WebScraper {
 				amazonArrayList.add(item);
 			}
 			// retrieve postedDate for amazonItems
-			controller.printConsole("\t Scraping " + amazonResult.size() + " amazon's item pages in parallel (if any) ... \n");	
+			controller.printConsole("\t Scraping " + amazonResult.size() + " amazon's item page(s) in parallel (if any) ... \n");	
 			amazonArrayList = deploySpiders(amazonArrayList);
 			
 			
@@ -332,7 +332,7 @@ public class WebScraper {
 			// check whether craigslist has any listings on the item searched
 			if (page.getFirstByXPath("//span[@class='totalcount']") != null) {
 				ArrayList<Integer> pageStatistics = getPageStatistics(page);
-				controller.printConsole("\t" + pageStatistics.get(0) + " pages of craigslist are being scraped in parallel ...");
+				controller.printConsole("\t" + pageStatistics.get(0) + " page(s) of craigslist are being scraped in parallel ...");
 				craigsArrayList.addAll(handlePagination(pageStatistics, URLEncoder.encode(keyword, "UTF-8"), searchUrl));
 			}
 			
