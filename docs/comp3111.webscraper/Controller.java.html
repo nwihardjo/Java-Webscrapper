@@ -1,0 +1,477 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Controller.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Java-Webscrapper</a> &gt; <a href="index.source.html" class="el_package">comp3111.webscraper</a> &gt; <span class="el_source">Controller.java</span></div><h1>Controller.java</h1><pre class="source lang-java linenums">/**
+ * 
+ */
+package comp3111.webscraper;
+
+import javafx.event.ActionEvent;
+import javafx.event.Event;
+import javafx.event.EventHandler;
+import javafx.fxml.FXML;
+import javax.swing.JOptionPane;
+
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
+import javafx.scene.control.TextField;
+import javafx.scene.control.TextArea;
+import javafx.scene.control.Hyperlink;
+import javafx.scene.control.MenuItem;
+import javafx.scene.control.TableView;
+import javafx.scene.control.TableColumn;
+import javafx.scene.control.TablePosition;
+import javafx.collections.FXCollections;
+import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.scene.input.MouseEvent;
+
+import java.awt.*;
+import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Date;
+import javafx.application.Platform;
+
+
+/**
+ * 
+ * @author kevinw
+ * @author hanifdean
+ * @author nwihardjo
+ * @author albertparedandan
+ *
+ *
+ * Controller class that manage GUI interaction. Please see document about JavaFX for details.
+ * 
+ */
+public class Controller {
+
+    @FXML 
+    private Label labelCount; 
+
+    @FXML 
+    private Label labelPrice; 
+
+    @FXML 
+    private Hyperlink labelMin; 
+
+    @FXML 
+    private Hyperlink labelLatest; 
+
+    @FXML
+    private TextField textFieldKeyword;
+
+    @FXML
+    private TextField refineKeyword;
+
+    @FXML
+    private TextArea textAreaConsole;
+
+    @FXML
+    private Button goButton;
+
+    @FXML
+    private Button refineButton;
+
+    @FXML
+    private MenuItem lastSearchMenuItem;
+
+    @FXML
+    private TableView itemTable;
+
+    @FXML
+    private TableColumn tableTitle;
+
+    @FXML
+    private TableColumn tablePrice;
+
+    @FXML
+    private TableColumn tableURL;
+
+    @FXML
+    private TableColumn tablePostedDate;
+
+    private WebScraper scraper;
+
+    private List&lt;Item&gt; scraperResult;
+
+    private List&lt;Item&gt; lastResult;
+
+<span class="fc" id="L100">    private String currentOutput = &quot;&quot;;</span>
+
+<span class="fc" id="L102">    private String lastOutput = &quot;&quot;;</span>
+
+    /**
+     * Default controller
+     */
+<span class="fc" id="L107">    public Controller() {</span>
+<span class="fc" id="L108">        scraper = new WebScraper();</span>
+<span class="fc" id="L109">    }</span>
+
+    /**
+     * Default initializer. It is empty.
+     */
+    @FXML
+    private void initialize() {
+<span class="nc" id="L116">        refineKeyword.setDisable(true);</span>
+<span class="nc" id="L117">        refineButton.setDisable(true);</span>
+<span class="nc" id="L118">        lastSearchMenuItem.setDisable(true);</span>
+<span class="nc" id="L119">    }</span>
+
+    @FXML
+    private void aboutYourTeam() {
+<span class="nc" id="L123">        JOptionPane.showMessageDialog(null, </span>
+            &quot;Albert Paredandan\n&quot; +
+            &quot;   ITSC: aparedandan\n&quot; +
+            &quot;   GitHub: albertparedandan\n\n&quot; +
+            &quot;Hanif Dean\n&quot; +
+            &quot;   ITSC: mhdnadhif\n&quot; +
+            &quot;   GitHub: hanifdean\n\n&quot; +
+            &quot;Nathaniel Wihardjo\n&quot; +
+            &quot;   ITSC: nwihardjo\n&quot; +
+            &quot;   GitHub: nwihardjo&quot;, &quot;About Your Team&quot;, JOptionPane.PLAIN_MESSAGE);
+<span class="nc" id="L133">    }</span>
+
+    @FXML
+    private void quit() {
+<span class="nc" id="L137">        System.exit(0);</span>
+<span class="nc" id="L138">    }</span>
+
+    @FXML
+    private void close() {
+        // @@@@@ set scraperResult null or not
+<span class="nc" id="L143">        scraperResult = null;</span>
+<span class="nc" id="L144">        textAreaConsole.clear();</span>
+<span class="nc" id="L145">        labelCount.setText(&quot;&lt;total&gt;&quot;);</span>
+<span class="nc" id="L146">        labelPrice.setText(&quot;&lt;AvgPrice&gt;&quot;);</span>
+<span class="nc" id="L147">        labelMin.setText(&quot;&lt;Lowest&gt;&quot;);</span>
+<span class="nc" id="L148">        labelLatest.setText(&quot;&lt;Latest&gt;&quot;);</span>
+<span class="nc" id="L149">        itemTable.getItems().clear();</span>
+<span class="nc" id="L150">    }</span>
+    /**
+     * Called when the new button is pressed. Very dummy action - print something in the command prompt.
+     */
+    @FXML
+    private void lastSearch() {
+<span class="nc bnc" id="L156" title="All 2 branches missed.">        if (lastResult == null) {</span>
+        }
+        else {
+<span class="nc" id="L159">            textAreaConsole.clear();</span>
+<span class="nc" id="L160">            printConsole(lastOutput);</span>
+<span class="nc" id="L161">            setLabelCount(lastResult.size());</span>
+<span class="nc" id="L162">            setLabelPrice(countAvgPrice(lastResult));</span>
+<span class="nc" id="L163">            setLabelMin(countLowestPrice(lastResult), lastResult);</span>
+<span class="nc" id="L164">            setLabelLatest(lastResult);</span>
+<span class="nc" id="L165">            refreshTableTab(lastResult);</span>
+<span class="nc" id="L166">            lastSearchMenuItem.setDisable(true);</span>
+        }
+<span class="nc" id="L168">    }</span>
+
+    @FXML
+    private void displaySummary(Event event) {
+        //System.out.println(&quot;Summary tab selected&quot;);
+<span class="nc" id="L173">    }</span>
+
+
+    /**
+     * Called when the search button is pressed.
+     */
+    @FXML
+    void actionSearch() {
+<span class="nc" id="L181">    	Thread thread = new Thread(() -&gt;</span>
+<span class="nc" id="L182">    	    performSearchFunctionalities()</span>
+    	);
+<span class="nc" id="L184">    	thread.start();</span>
+<span class="nc" id="L185">    }</span>
+    // TODO: refactor function above and try testing after initializing scraperresult to 0
+
+    void performSearchFunctionalities() {
+<span class="nc" id="L189">        textAreaConsole.clear();</span>
+<span class="nc" id="L190">        System.out.println(&quot;actionSearch: &quot; + textFieldKeyword.getText());</span>
+<span class="nc" id="L191">        List&lt;Item&gt; result = scraper.scrape(textFieldKeyword.getText(), this);</span>
+<span class="nc" id="L192">        lastOutput = currentOutput;</span>
+<span class="nc" id="L193">        lastResult = scraperResult;</span>
+<span class="nc" id="L194">        scraperResult = result;</span>
+<span class="nc" id="L195">        printOutputToConsole();</span>
+<span class="nc" id="L196">        refreshSummaryTab();</span>
+<span class="nc" id="L197">        refreshTableTab(scraperResult);</span>
+<span class="nc" id="L198">        enableRefineSearch();</span>
+<span class="nc" id="L199">        lastSearchMenuItem.setDisable(false);</span>
+<span class="nc" id="L200">    }</span>
+
+    private void refreshTableTab(List&lt;Item&gt; dummy) {
+<span class="nc" id="L203">        List&lt;Item&gt; tempResult = dummy;</span>
+    
+<span class="nc" id="L205">        tableTitle.setCellValueFactory(new PropertyValueFactory&lt;Item, String&gt;(&quot;title&quot;));</span>
+<span class="nc" id="L206">        tablePrice.setCellValueFactory(new PropertyValueFactory&lt;Item, Double&gt;(&quot;price&quot;));</span>
+<span class="nc" id="L207">        tableURL.setCellValueFactory(new PropertyValueFactory&lt;Item, String&gt;(&quot;url&quot;));</span>
+<span class="nc" id="L208">        tablePostedDate.setCellValueFactory(new PropertyValueFactory&lt;Item, Date&gt;(&quot;postedDate&quot;));</span>
+
+<span class="nc" id="L210">        itemTable.setItems(FXCollections.observableList(tempResult));</span>
+<span class="nc" id="L211">        itemTable.getSelectionModel().setCellSelectionEnabled(true);</span>
+<span class="nc" id="L212">        itemTable.setOnMouseClicked(new EventHandler&lt;MouseEvent&gt;() {</span>
+            @Override
+            public void handle(MouseEvent click) {
+<span class="nc bnc" id="L215" title="All 2 branches missed.">                if (click.getClickCount() == 1) {</span>
+                    //@SuppressWarnings(&quot;rawtypes&quot;)
+<span class="nc bnc" id="L217" title="All 2 branches missed.">                    if (itemTable.getSelectionModel().isEmpty()) {}</span>
+                    else {
+<span class="nc" id="L219">                        TablePosition pos = (TablePosition) itemTable.getSelectionModel().getSelectedCells().get(0);</span>
+<span class="nc" id="L220">                        int row = pos.getRow();</span>
+<span class="nc" id="L221">                        int col = pos.getColumn();</span>
+                        //@SuppressWarnings(&quot;rawtypes&quot;)
+<span class="nc" id="L223">                        TableColumn column = pos.getTableColumn();</span>
+<span class="nc bnc" id="L224" title="All 2 branches missed.">                        if (col == 2) {</span>
+<span class="nc" id="L225">                            String val = column.getCellData(row).toString();</span>
+                            try {
+<span class="nc" id="L227">                                Desktop.getDesktop().browse(new URI(val));</span>
+<span class="nc" id="L228">                            } catch (IOException e1) {</span>
+<span class="nc" id="L229">                                e1.printStackTrace();</span>
+<span class="nc" id="L230">                            } catch (URISyntaxException e1) {</span>
+<span class="nc" id="L231">                                e1.printStackTrace();</span>
+<span class="nc" id="L232">                            }</span>
+                        }
+                    }
+                }
+<span class="nc" id="L236">            }</span>
+        });
+<span class="nc" id="L238">    }</span>
+
+    // enable asynchronous printing on console tab
+    void printConsole (String message) {
+<span class="nc" id="L242">        textAreaConsole.appendText(message);</span>
+<span class="nc" id="L243">    }</span>
+
+    @FXML
+    void refineSearch() {
+<span class="nc" id="L247">        System.out.println(&quot;refineSearch: &quot; + refineKeyword.getText());</span>
+<span class="nc" id="L248">        checkIfItemsContainRefineKeyWord();</span>
+<span class="nc" id="L249">        printOutputToConsole();</span>
+<span class="nc" id="L250">        refreshSummaryTab();</span>
+<span class="nc" id="L251">        refreshTableTab(scraperResult);</span>
+<span class="nc" id="L252">        disableRefineSearch();</span>
+<span class="nc" id="L253">    }</span>
+
+    private void checkIfItemsContainRefineKeyWord() {
+<span class="nc" id="L256">        String refineStr = refineKeyword.getText().toLowerCase();</span>
+<span class="nc" id="L257">        Iterator&lt;Item&gt; resultItr = scraperResult.iterator();</span>
+<span class="nc bnc" id="L258" title="All 2 branches missed.">        while (resultItr.hasNext()) {</span>
+<span class="nc" id="L259">            Item currentItem = resultItr.next();</span>
+<span class="nc" id="L260">            String itemTitle = currentItem.getTitle().toLowerCase();</span>
+<span class="nc bnc" id="L261" title="All 2 branches missed.">            if (!itemTitle.contains(refineStr)) {</span>
+<span class="nc" id="L262">                resultItr.remove();</span>
+            }
+<span class="nc" id="L264">        }</span>
+<span class="nc" id="L265">    }</span>
+
+    private void refreshSummaryTab() {
+<span class="nc bnc" id="L268" title="All 2 branches missed.">        if (Platform.isFxApplicationThread()) {</span>
+<span class="nc" id="L269">            updateSummaryDetails();</span>
+        }
+        else {
+<span class="nc" id="L272">            Platform.runLater(() -&gt; updateSummaryDetails());</span>
+        }
+<span class="nc" id="L274">    }</span>
+
+    private void updateSummaryDetails() {
+<span class="nc" id="L277">        int itemCount = getItemCount(scraperResult);</span>
+<span class="nc" id="L278">        double avgPrice = getAvgPrice(scraperResult);</span>
+<span class="nc" id="L279">        double lowestPrice = getLowestPrice(scraperResult);</span>
+<span class="nc" id="L280">        setLabelCount(itemCount);</span>
+<span class="nc" id="L281">        setLabelPrice(avgPrice);</span>
+<span class="nc" id="L282">        setLabelMin(lowestPrice, scraperResult);</span>
+<span class="nc" id="L283">        setLabelLatest(scraperResult);</span>
+<span class="nc" id="L284">    }</span>
+
+    private void enableRefineSearch() {
+<span class="nc" id="L287">        refineKeyword.setDisable(false);</span>
+<span class="nc" id="L288">        refineButton.setDisable(false);</span>
+<span class="nc" id="L289">    }</span>
+
+    private void disableRefineSearch() {
+<span class="nc" id="L292">        refineKeyword.setDisable(true);</span>
+<span class="nc" id="L293">        refineButton.setDisable(true);</span>
+<span class="nc" id="L294">    }</span>
+
+    private void printOutputToConsole() {
+<span class="nc" id="L297">        textAreaConsole.clear();</span>
+<span class="nc" id="L298">        String output = produceConsoleOutput(scraperResult);</span>
+<span class="nc" id="L299">        printConsole(output);</span>
+<span class="nc" id="L300">        currentOutput = output;</span>
+<span class="nc" id="L301">    }</span>
+
+    String produceConsoleOutput(List&lt;Item&gt; scraperResult) {
+<span class="fc" id="L304">        String output = &quot;&quot;;</span>
+<span class="fc bfc" id="L305" title="All 2 branches covered.">        for (Item item : scraperResult) {</span>
+<span class="fc" id="L306">            output += item.getTitle() + &quot;\t&quot; + item.getPrice() + &quot;\t&quot; + item.getUrl() + &quot;\n&quot;;</span>
+<span class="fc" id="L307">        }</span>
+<span class="fc" id="L308">        return output;</span>
+    }
+
+    int getItemCount(List&lt;Item&gt; scraperResult) {
+<span class="fc" id="L312">        return scraperResult.size();</span>
+    }
+
+    private void setLabelCount(int itemCount) {
+<span class="nc" id="L316">        labelCount.setText(Integer.toString(itemCount));</span>
+<span class="nc" id="L317">    }</span>
+
+    double getAvgPrice(List&lt;Item&gt; scraperResult) {
+<span class="fc bfc" id="L320" title="All 2 branches covered.">        boolean resultFound = (scraperResult.size() != 0);</span>
+<span class="fc bfc" id="L321" title="All 2 branches covered.">        if (resultFound)</span>
+<span class="fc" id="L322">            return countAvgPrice(scraperResult);</span>
+        else
+<span class="fc" id="L324">            return 0.0;</span>
+    }
+
+    double countAvgPrice(List&lt;Item&gt; scraperResult) {
+<span class="fc" id="L328">        double totalPrice = 0.0;</span>
+<span class="fc" id="L329">        int itemCount = 0;</span>
+<span class="fc bfc" id="L330" title="All 2 branches covered.">        for (Item item : scraperResult) {</span>
+<span class="fc bfc" id="L331" title="All 2 branches covered.">            if (item.getPrice() == 0.0)</span>
+<span class="fc" id="L332">                continue;</span>
+<span class="fc" id="L333">            totalPrice += item.getPrice();</span>
+<span class="fc" id="L334">            itemCount++;</span>
+<span class="fc" id="L335">        }</span>
+<span class="fc bfc" id="L336" title="All 2 branches covered.">        boolean allItemsAreZero = (itemCount == 0);</span>
+<span class="fc bfc" id="L337" title="All 2 branches covered.">        if (allItemsAreZero)</span>
+<span class="fc" id="L338">            return 0.0;</span>
+<span class="fc" id="L339">        return totalPrice / itemCount;</span>
+    }
+
+    private void setLabelPrice(double avgPrice) {
+<span class="nc bnc" id="L343" title="All 4 branches missed.">        if (priceAvailable(scraperResult) || priceAvailableButZeros(scraperResult))</span>
+<span class="nc" id="L344">            labelPrice.setText(String.format(&quot;%.2f&quot;, avgPrice));</span>
+        else
+<span class="nc" id="L346">            labelPrice.setText(&quot;-&quot;);</span>
+<span class="nc" id="L347">    }</span>
+
+    boolean priceAvailable(List&lt;Item&gt; scraperResult) {
+<span class="fc bfc" id="L350" title="All 2 branches covered.">        return (getAvgPrice(scraperResult) != 0.0);</span>
+    }
+
+    boolean priceAvailableButZeros(List&lt;Item&gt; scraperResult) {
+<span class="fc bfc" id="L354" title="All 2 branches covered.">        if (scraperResult.size() == 0)</span>
+<span class="fc" id="L355">            return false;</span>
+<span class="fc bfc" id="L356" title="All 2 branches covered.">        else if (getAvgPrice(scraperResult) == 0.0) {</span>
+<span class="fc" id="L357">            return false;</span>
+        }
+<span class="fc" id="L359">        return true;</span>
+    }
+
+    double getLowestPrice(List&lt;Item&gt; scraperResult) {
+<span class="fc bfc" id="L363" title="All 2 branches covered.">        boolean resultFound = (scraperResult.size() != 0);</span>
+<span class="fc bfc" id="L364" title="All 2 branches covered.">        if (resultFound)</span>
+<span class="fc" id="L365">            return countLowestPrice(scraperResult);</span>
+        else
+<span class="fc" id="L367">            return 0.0;</span>
+    }
+
+    private double countLowestPrice(List&lt;Item&gt; scraperResult) {
+<span class="fc" id="L371">        double lowestPrice = 100000000.0;</span>
+<span class="fc bfc" id="L372" title="All 2 branches covered.">        for (Item item : scraperResult) {</span>
+<span class="fc bfc" id="L373" title="All 2 branches covered.">            if (item.getPrice() == 0.0)</span>
+<span class="fc" id="L374">                continue;</span>
+<span class="fc bfc" id="L375" title="All 2 branches covered.">            if (item.getPrice() &lt; lowestPrice)</span>
+<span class="fc" id="L376">                lowestPrice = item.getPrice();</span>
+<span class="fc" id="L377">        }</span>
+<span class="fc bfc" id="L378" title="All 2 branches covered.">        boolean itemPricesAreZeros = (lowestPrice == 100000000.0);</span>
+<span class="fc bfc" id="L379" title="All 2 branches covered.">        if (itemPricesAreZeros)</span>
+<span class="fc" id="L380">            lowestPrice = 0.0;</span>
+<span class="fc" id="L381">        return lowestPrice;</span>
+    }
+
+    private void setLabelMin(double lowestPrice, List&lt;Item&gt; scraperResult) {
+        // if priceAvailable set hyperlink to page (getItemWithLowestPrice)
+        // else display &quot;-&quot;
+<span class="nc bnc" id="L387" title="All 4 branches missed.">        if (priceAvailable(scraperResult) || priceAvailableButZeros(scraperResult)) {</span>
+<span class="nc" id="L388">            labelMin.setText(String.format(&quot;%.2f&quot;, lowestPrice));</span>
+<span class="nc" id="L389">            showLowestPricedItemInBrowser(scraperResult);</span>
+        }
+        else
+<span class="nc" id="L392">            labelMin.setText(&quot;-&quot;);</span>
+<span class="nc" id="L393">    }</span>
+
+    private void showLowestPricedItemInBrowser(List&lt;Item&gt; scraperResult) {
+<span class="nc" id="L396">        labelMin.setOnAction(new EventHandler&lt;ActionEvent&gt;() {</span>
+            @Override
+            public void handle(ActionEvent event) {
+                try {
+<span class="nc" id="L400">                    Desktop.getDesktop().browse(new URI(getLowestPriceURI(scraperResult)));</span>
+<span class="nc" id="L401">                } catch (IOException e1) {</span>
+<span class="nc" id="L402">                    e1.printStackTrace();</span>
+<span class="nc" id="L403">                } catch (URISyntaxException e1) {</span>
+<span class="nc" id="L404">                    e1.printStackTrace();</span>
+<span class="nc" id="L405">                }</span>
+<span class="nc" id="L406">            }</span>
+        });
+<span class="nc" id="L408">    }</span>
+
+    String getLowestPriceURI(List&lt;Item&gt; scraperResult) {
+        /*
+         * Returns the first item with the lowest price
+         * if there are two items with the same lowest price,
+         * function returns the first one.
+         * if invalid result, return empty string
+         */
+<span class="fc" id="L417">        double lowestPrice = getLowestPrice(scraperResult);</span>
+<span class="fc" id="L418">        String url = &quot;&quot;;</span>
+<span class="fc bfc" id="L419" title="All 2 branches covered.">        for (Item item : scraperResult) {</span>
+<span class="fc bfc" id="L420" title="All 2 branches covered.">            if (item.getPrice() == lowestPrice) {</span>
+<span class="fc" id="L421">                url = item.getUrl();</span>
+<span class="fc" id="L422">                break;</span>
+            }
+<span class="fc" id="L424">        }</span>
+<span class="fc" id="L425">        return url;</span>
+    }
+
+    private void setLabelLatest(List&lt;Item&gt; scraperResult) {
+<span class="nc bnc" id="L429" title="All 2 branches missed.">        if (itemsFound(scraperResult)) {</span>
+<span class="nc" id="L430">            showLatestPostInBrowser(scraperResult);</span>
+        }
+        else
+<span class="nc" id="L433">            labelLatest.setText(&quot;-&quot;);</span>
+<span class="nc" id="L434">    }</span>
+
+    boolean itemsFound(List&lt;Item&gt; scraperResult) {
+<span class="fc bfc" id="L437" title="All 2 branches covered.">        if (getItemCount(scraperResult) == 0)</span>
+<span class="fc" id="L438">            return false;</span>
+        else
+<span class="fc" id="L440">            return true;</span>
+    }
+
+    private void showLatestPostInBrowser(List&lt;Item&gt; scraperResult) {
+<span class="nc" id="L444">        labelLatest.setText(&quot;See latest post&quot;);</span>
+<span class="nc" id="L445">        labelLatest.setOnAction(new EventHandler&lt;ActionEvent&gt;() {</span>
+            @Override
+            public void handle(ActionEvent event) {
+                try {
+<span class="nc" id="L449">                    Desktop.getDesktop().browse(new URI(getLatestPostURI(scraperResult)));</span>
+<span class="nc" id="L450">                } catch (IOException e1) {</span>
+<span class="nc" id="L451">                    e1.printStackTrace();</span>
+<span class="nc" id="L452">                } catch (URISyntaxException e1) {</span>
+<span class="nc" id="L453">                    e1.printStackTrace();</span>
+<span class="nc" id="L454">                }</span>
+<span class="nc" id="L455">            }</span>
+        });
+<span class="nc" id="L457">    }</span>
+
+    private String getLatestPostURI(List&lt;Item&gt; scraperResult) {
+<span class="nc" id="L460">        Date latestDate = scraperResult.get(0).getPostedDate();</span>
+<span class="nc" id="L461">        String latestPostURI = scraperResult.get(0).getUrl();</span>
+<span class="nc bnc" id="L462" title="All 2 branches missed.">        for (Item item: scraperResult) {</span>
+<span class="nc bnc" id="L463" title="All 2 branches missed.">            if (item.getPostedDate() != null) {</span>
+                // Debug: to check if still enters
+                // System.out.println(item.getPostedDate());
+<span class="nc bnc" id="L466" title="All 2 branches missed.">                if (item.getPostedDate().after(latestDate)) {</span>
+//                    System.out.println(&quot;Latest Date: &quot; + latestDate.toString());
+<span class="nc" id="L468">                    latestDate = item.getPostedDate();</span>
+<span class="nc" id="L469">                    latestPostURI = item.getUrl();</span>
+                }
+            }
+<span class="nc" id="L472">        }</span>
+<span class="nc" id="L473">        return latestPostURI;</span>
+    }
+}
+
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

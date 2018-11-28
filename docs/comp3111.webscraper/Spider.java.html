@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Spider.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Java-Webscrapper</a> &gt; <a href="index.source.html" class="el_package">comp3111.webscraper</a> &gt; <span class="el_source">Spider.java</span></div><h1>Spider.java</h1><pre class="source lang-java linenums">package comp3111.webscraper;
+
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.concurrent.Callable;
+
+import com.gargoylesoftware.htmlunit.WebClient;
+import com.gargoylesoftware.htmlunit.html.HtmlElement;
+import com.gargoylesoftware.htmlunit.html.HtmlPage;
+
+/**
+ * Class implemented to provide concurrency on amazon portal scraping, which significantly
+ * 	improve the performance of the webscraper. Class implements Callable, a base class which can be
+ * 	executed by thread while support the ability to return value when called. The class is managed
+ * 	by an executor service which instantiate a thread pool with the size of the number of amazon
+ * 	items, to further enhance the performance and reduce time consumed. 
+ * 
+ * @author nwihardjo
+ *
+ */
+public class Spider implements Callable&lt;Date&gt; {
+	private WebClient client;
+	private String Url;
+
+	/**
+	 * Default constructor which instantiate the webclient and set-up its configuration
+	 * 	to scrape amazon's item page
+	 * 
+	 * @param Url absolute web address of the item page
+	 */
+<span class="fc" id="L31">	public Spider(String Url) {</span>
+<span class="fc" id="L32">		client = new WebClient();</span>
+<span class="fc" id="L33">		client.getOptions().setCssEnabled(false);</span>
+<span class="fc" id="L34">		client.getOptions().setJavaScriptEnabled(false);</span>
+<span class="fc" id="L35">		client.waitForBackgroundJavaScript(100000);</span>
+<span class="fc" id="L36">		this.Url = Url;</span>
+<span class="fc" id="L37">	}</span>
+		
+	/**
+	 * Retrieve page of the given url address. Then, the webdriver / client is closed for 
+	 * 	cutting down time required to shutdown the thread pool (closing bunch of webclient
+	 * 	at a time consumes more time).
+	 * 
+	 * @return HtmlPage of the retrieved page. Return null if the url is broken or any issue
+	 * 	in retrieving the page
+	 */
+	private HtmlPage getPage(){
+		try { 
+<span class="fc" id="L49">			HtmlPage page = client.getPage(this.Url);</span>
+<span class="fc" id="L50">			client.close();</span>
+<span class="fc" id="L51">			return page;</span>
+<span class="fc" id="L52">		} catch (Exception e) {</span>
+<span class="fc" id="L53">			e.printStackTrace();</span>
+<span class="fc" id="L54">			return null;</span>
+		}
+	}
+
+	/**
+	 * Method to scrape the date of the a service posting (i.e. amazon home &amp; business services)
+	 * 	, not an item. Service posting has different web layout, html structures, and css styles 
+	 * 	which require different XPath address. This method utilises the parseDate method to return the 
+	 * 	date in a desired format
+	 * 
+	 * @param page retrieved html page by the webclient 
+	 * @return posted date of the service. Return null when no information on posted date available
+	 * @see parseDate
+	 */
+	private static Date scrapeService(HtmlPage page) {
+<span class="fc" id="L69">		HtmlElement postedDate = (HtmlElement) page.getFirstByXPath(&quot;//div[@class='content']//*[contains(text(),'Date')]/parent::li&quot;);</span>
+		
+		// if else condition += postedDate.asText() != &quot;&quot;
+<span class="fc bfc" id="L72" title="All 2 branches covered.">		if (postedDate != null)</span>
+<span class="fc" id="L73">			return parseDate(postedDate.asText().substring(postedDate.asText().indexOf(&quot;: &quot;) + 2));</span>
+		else
+<span class="fc" id="L75">			return null;</span>
+	}
+	
+	/**
+	 * Convert the passed string as a date object based on the format of the date in the website
+	 * 
+	 * @param strDate date scraped from the html page
+	 * @return Date object of the posted date
+	 */
+	private static Date parseDate(String strDate) {
+<span class="fc" id="L85">		SimpleDateFormat format = new SimpleDateFormat(&quot;MMMM dd, yyyy&quot;);</span>
+		try {
+<span class="fc" id="L87">			return format.parse(strDate);</span>
+<span class="nc" id="L88">		} catch (Exception e) {</span>
+<span class="nc" id="L89">			return null;</span>
+		}
+	}
+	
+	/**
+	 * A method which is override from the Callable class. Used to return the value of the parsed date in 
+	 * 	Date object. This method holds the workflow of the spider, which retrieve the item page and scrape 
+	 * 	the posted date. There are two html structures of the item page, for which two XPath addresses needed
+	 * 	to be looked after. If the two locations do not contain the specified date, this method will try to look
+	 * 	for the location of the date assuming the item is a service. 
+	 * 
+	 * @return Date object of the posted date item. Return null if there is no available information on the posted date 
+	 */
+	@Override
+	public Date call() {
+<span class="fc" id="L104">		HtmlPage page = this.getPage();</span>
+<span class="fc" id="L105">		HtmlElement iDate = page.getFirstByXPath(&quot;//*[contains(text(), 'Date')]/following-sibling::span&quot;);</span>
+<span class="fc" id="L106">		HtmlElement uDate = page.getFirstByXPath(&quot;//*[contains(text(), 'Date')]/following-sibling::td&quot;);</span>
+		
+<span class="fc bfc" id="L108" title="All 4 branches covered.">		if (iDate != null &amp;&amp; iDate.asText().length() != 0)</span>
+<span class="fc" id="L109">			return parseDate(iDate.asText());			</span>
+<span class="pc bpc" id="L110" title="1 of 4 branches missed.">		else if (uDate != null &amp;&amp; uDate.asText().length() != 0)</span>
+<span class="fc" id="L111">			return parseDate(uDate.asText());</span>
+		else  
+<span class="fc" id="L113">			return scrapeService(page);</span>
+	}
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>
