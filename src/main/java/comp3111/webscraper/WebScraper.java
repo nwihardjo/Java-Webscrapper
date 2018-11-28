@@ -36,9 +36,6 @@ public class WebScraper {
 	
 	/**
 	 * Default Constructor, instantiated webClient of the HtmlUnit and configured for javascript renderring
-	 * 
-	 * @return WebScraper instance
-	 * @see WebScraper 
 	 */
 	public WebScraper() {
 		client = new WebClient();
@@ -70,7 +67,6 @@ public class WebScraper {
 	 * 
 	 * @param page a single page of the craigslist portal
 	 * @return  list of the item present in the page
-	 * @see craigsSpider
 	 */
 	protected static ArrayList<Item> scrapePage(HtmlPage page) {
 		List<?> items = (List<?>) page.getByXPath("//li[@class='result-row']");
@@ -243,10 +239,10 @@ public class WebScraper {
 	 * @param firstPageUrl 
 	 * @return arraylist of all items scraped through all pages
 	 */
-	private static ArrayList<Item> handlePagination (Integer[] pageStatistics, String keyword, String firstPageUrl){
+	private ArrayList<Item> handlePagination (ArrayList<Integer> pageStatistics, String keyword, String firstPageUrl){
 		ArrayList<Item> craigsArrayList = new ArrayList<Item>();
 		try {
-			ExecutorService craigsSpiderPool = Executors.newFixedThreadPool(pageStatistics[0]);
+			ExecutorService craigsSpiderPool = Executors.newFixedThreadPool(pageStatistics.get(0));
 			List<Future<ArrayList<Item>>> spiders = new ArrayList<Future<ArrayList<Item>>>();
 			
 			// for scraping the first page
@@ -254,8 +250,8 @@ public class WebScraper {
 			spiders.add(craigsSpiderPool.submit(cSpider));
 					
 			// scrape the next pages
-			for (int i = 2; i <= pageStatistics[0]; i++) {
-				String urlPage = DEFAULT_URL + "search/sss?s=" + (i-1)*pageStatistics[1] + "&query=" + keyword + "&sort=rel";
+			for (int i = 2; i <= pageStatistics.get(0); i++) {
+				String urlPage = DEFAULT_URL + "search/sss?s=" + (i-1)*pageStatistics.get(1) + "&query=" + keyword + "&sort=rel";
 				Callable<ArrayList<Item>> cSpider_ = new craigsSpider(urlPage);
 				spiders.add(craigsSpiderPool.submit(cSpider_));
 			}
@@ -277,15 +273,15 @@ public class WebScraper {
 	 * @return array integer which contain the total number of pages resulted from searching the keyword, and the number
 	 * 	of items in each page
 	 */
-	private static Integer[] getPageStatistics (HtmlPage page) {
-		Integer[] ret = new Integer[2];
+	private static ArrayList<Integer> getPageStatistics (HtmlPage page) {
+		ArrayList<Integer> ret = new ArrayList<Integer>();
 		
 		Integer totResultCount = new Integer (((HtmlElement) page.getFirstByXPath("//span[@class='totalcount']")).asText());
 		String rangeResult = ((HtmlElement) page.getFirstByXPath("//span[@class='range']")).asText();
 		Integer numResultOnePage = new Integer (rangeResult.substring(rangeResult.lastIndexOf("-")+1).replaceAll(" ", ""));
 		
-		ret[0] = (totResultCount % numResultOnePage != 0) ? (totResultCount / numResultOnePage)+1 : (totResultCount/numResultOnePage);
-		ret[1] = numResultOnePage;
+		ret.add((totResultCount % numResultOnePage != 0) ? (totResultCount / numResultOnePage)+1 : (totResultCount/numResultOnePage));
+		ret.add(numResultOnePage);
 		return ret;
 	}
 	
@@ -335,8 +331,8 @@ public class WebScraper {
 			// handle pagination using multi-threading to support concurrency
 			// check whether craigslist has any listings on the item searched
 			if (page.getFirstByXPath("//span[@class='totalcount']") != null) {
-				Integer[] pageStatistics = getPageStatistics(page);
-				controller.printConsole("\t" + pageStatistics[0] + " pages of craigslist are being scraped in parallel ...");
+				ArrayList<Integer> pageStatistics = getPageStatistics(page);
+				controller.printConsole("\t" + pageStatistics.get(0) + " pages of craigslist are being scraped in parallel ...");
 				craigsArrayList.addAll(handlePagination(pageStatistics, URLEncoder.encode(keyword, "UTF-8"), searchUrl));
 			}
 			
