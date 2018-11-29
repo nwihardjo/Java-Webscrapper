@@ -36,6 +36,9 @@ public class WebScraper {
 	
 	/**
 	 * Default Constructor, instantiated webClient of the HtmlUnit and configured for javascript renderring
+	 * 
+	 *
+	 * @see WebScraper 
 	 */
 	public WebScraper() {
 		client = new WebClient();

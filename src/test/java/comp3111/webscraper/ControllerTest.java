@@ -20,65 +20,6 @@ public class ControllerTest {
     @BeforeClass
     public static void init() throws Exception {
         testingController = new Controller();
-
-//        Item item1 = new Item("MBP", 2158.0, "https://www.amazon.com/Apple-MLH42LL-quad-core-Discontinued-Manufacturer/dp/B01LTHXA7C/ref=sr_1_16/144-5380326-8219121?ie=UTF8&qid=1543404863&sr=8-16&keywords=macbook+pro+2015+15",
-//                "Amazon", dateFormatting("2018/05/09"));
-//        System.out.println("");
-    }
-
-    private static Date dateFormatting(String dateString) {
-        SimpleDateFormat format = new SimpleDateFormat("MMMM dd, yyyy");
-        try {
-            Date df = format.parse(dateString);
-            System.out.println("Formatted date: " + df);
-            return format.parse(dateString);
-        } catch (Exception e) {
-            return null;
-        }
-    }
-
-    @Test
-    public void testPerformSearchFunctionalities() {
-
-    }
-
-    @Test
-    public void testRefineSearch() throws Exception {
-        // Controller should perform a search and then refine should me
-    }
-
-    @Test
-    public void testRefreshSummaryTab() throws Exception {
-
-    }
-
-    @Test
-    public void testUpdateSummaryDetails() throws Exception {
-
-    }
-
-    @Test
-    public void testTogglePrimarySearch() throws Exception {
-
-    }
-
-    @Test
-    public void testToggleRefineSearch() throws Exception {
-
-    }
-
-    @Test
-    public void printOutputToConsole() throws Exception {
-
-    }
-
-    @Test
-    public void testGetItemCount() throws Exception {
-    }
-
-    @Test
-    public void testSetLabelCount() throws Exception {
-
     }
 
     @Test
@@ -142,11 +83,6 @@ public class ControllerTest {
     }
 
     @Test
-    public void testSetLabelPrice() throws Exception {
-
-    }
-
-    @Test
     public void testGetLowestPriceIfValid() throws Exception {
         ArrayList<Item> tempList = new ArrayList<Item>();
         Item item1 = new Item();
@@ -186,21 +122,6 @@ public class ControllerTest {
         tempList.add(item3);
         tempList.add(item4);
         assertEquals(testingController.getLowestPrice(tempList), 0, 0);
-    }
-
-    @Test
-    public void testCountLowestPrice() throws Exception {
-
-    }
-
-    @Test
-    public void testSetLabelMin() throws Exception {
-
-    }
-
-    @Test
-    public void testShowLowestPricedItemInBrowser() throws Exception {
-
     }
 
     @Test
