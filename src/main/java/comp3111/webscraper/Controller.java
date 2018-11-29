@@ -183,7 +183,7 @@ public class Controller {
     	);
     	thread.start();
     }
-    // TODO: refactor function above and try testing after initializing scraperresult to 0
+
 
     void performSearchFunctionalities() {
         textAreaConsole.clear();
@@ -242,6 +242,11 @@ public class Controller {
         textAreaConsole.appendText(message);
     }
 
+    /**
+     * This function performs all the required tasks for the refine search functionality
+     * such as filtering the items, refreshing the summary and table and disabling the function
+     * by calling the respective helper functions.
+     */
     @FXML
     void refineSearch() {
         System.out.println("refineSearch: " + refineKeyword.getText());
@@ -252,6 +257,11 @@ public class Controller {
         disableRefineSearch();
     }
 
+    /**
+     * This function performs the filtering operation in the refine search functionality
+     * by iterating through the scraperResult items and removing items from the list if
+     * it doesn't contain the refine keyword in the item's title.
+     */
     private void checkIfItemsContainRefineKeyWord() {
         String refineStr = refineKeyword.getText().toLowerCase();
         Iterator<Item> resultItr = scraperResult.iterator();
@@ -264,6 +274,10 @@ public class Controller {
         }
     }
 
+    /**
+     * This function ensures that updating the summary details is run on an FX application thread
+     * or if not, it should be run later.
+     */
     private void refreshSummaryTab() {
         if (Platform.isFxApplicationThread()) {
             updateSummaryDetails();
@@ -273,6 +287,11 @@ public class Controller {
         }
     }
 
+    /**
+     * This function updates all the summary tab details (labelCount, labelPrice, labelMin, and
+     * labelLatest) by calling the helper functions that performs these particular tasks.
+     *
+     */
     private void updateSummaryDetails() {
         int itemCount = getItemCount(scraperResult);
         double avgPrice = getAvgPrice(scraperResult);
@@ -283,15 +302,30 @@ public class Controller {
         setLabelLatest(scraperResult);
     }
 
+    /**
+     * This function enables the refine search functionality in the GUI by enabling
+     * the textbox for entering the refine keyword as well as the refine button.
+     */
+
     private void enableRefineSearch() {
         refineKeyword.setDisable(false);
         refineButton.setDisable(false);
     }
 
+    /**
+     * This function disables the refine search functionality in the GUI by disabling
+     * the textbox for entering the refine keyword as well as the refine button.
+     */
+
     private void disableRefineSearch() {
         refineKeyword.setDisable(true);
         refineButton.setDisable(true);
     }
+
+    /**
+     * This function performs the actual printing to the console and sets the current output
+     * to be the formatted output.
+     */
 
     private void printOutputToConsole() {
         textAreaConsole.clear();
@@ -300,6 +334,13 @@ public class Controller {
         currentOutput = output;
     }
 
+    /**
+     * This function formats the item's attributes into the correct console output.
+     * This function is called in printOutputToConsole.
+     *
+     * @param scraperResult: the number of items in the list (scraperResult)
+     * @return a string corresponding to the formatted console output
+     */
     String produceConsoleOutput(List<Item> scraperResult) {
         String output = "";
         for (Item item : scraperResult) {
@@ -308,21 +349,46 @@ public class Controller {
         return output;
     }
 
+    /**
+     * This function retrieves the number of items in scraperResult.
+     *
+     * @param scraperResult: the number of items in the list (scraperResult)
+     * @return an integer corresponding to number of items in scraperResult.
+     */
     int getItemCount(List<Item> scraperResult) {
         return scraperResult.size();
     }
+
+    /**
+     * This function sets labelCount to the number of items in scraperResult.
+     * @param itemCount: the number of items in the list (scraperResult)
+     */
 
     private void setLabelCount(int itemCount) {
         labelCount.setText(Integer.toString(itemCount));
     }
 
+    /**
+     * This function retrieves the average price based on whether or not there are items
+     * in scraperResult.
+     *
+     * @param scraperResult: the list of items that contains the results of scraping the websites.
+     * @return the average price as a double.
+     */
     double getAvgPrice(List<Item> scraperResult) {
-        boolean resultFound = (scraperResult.size() != 0);
-        if (resultFound)
+        if (itemsFound(scraperResult))
             return countAvgPrice(scraperResult);
         else
             return 0.0;
     }
+
+    /**
+     * This function calculates the average price of all items in scraperResult. This function is
+     * called in getAvgPrice.
+     *
+     * @param scraperResult: the list of items that contains the results of scraping the websites.
+     * @return the average price as a double.
+     */
 
     double countAvgPrice(List<Item> scraperResult) {
         double totalPrice = 0.0;
@@ -339,6 +405,13 @@ public class Controller {
         return totalPrice / itemCount;
     }
 
+    /**
+     * This function sets labelPrice (denoting average price) from the average price parameter passed
+     * to the function. The function sets labelPrice as "-" if price is not available.
+     *
+     * @param avgPrice: average price of the items in scraperResult.
+     */
+
     private void setLabelPrice(double avgPrice) {
         if (priceAvailable(scraperResult) || priceAvailableButZeros(scraperResult))
             labelPrice.setText(String.format("%.2f", avgPrice));
@@ -346,10 +419,23 @@ public class Controller {
             labelPrice.setText("-");
     }
 
+    /**
+     * A helper function that checks if the average price of the items in scraperResult are not 0.0
+     *
+     * @param scraperResult: the list of items that contains the results of scraping the websites.
+     * @return a boolean corresponding to price availability
+     */
     boolean priceAvailable(List<Item> scraperResult) {
         return (getAvgPrice(scraperResult) != 0.0);
     }
 
+    /**
+     * A helper function that checks if the prices of the items in scraperResults are valid
+     * (meaning its average price is not 0.0) and if scraperResult is empty or not.
+     *
+     * @param scraperResult: the list of items that contains the results of scraping the websites.
+     * @return a boolean corresponding to price availability and its average price not being zero.
+     */
     boolean priceAvailableButZeros(List<Item> scraperResult) {
         if (scraperResult.size() == 0)
             return false;
@@ -359,13 +445,28 @@ public class Controller {
         return true;
     }
 
+    /**
+     * This function retrieves the lowest price from a list of items containing the results.
+     * The function returns a 0.0 if no items are found in scraperResult.
+     *
+     * @param scraperResult: the list of items that contains the results of scraping the websites
+     * @return a double that represents the lowest priced item.
+     */
+
     double getLowestPrice(List<Item> scraperResult) {
-        boolean resultFound = (scraperResult.size() != 0);
-        if (resultFound)
+        if (itemsFound(scraperResult))
             return countLowestPrice(scraperResult);
         else
             return 0.0;
     }
+
+    /**
+     * This function calculates the item with the lowest price from the list of items in scraperResult.
+     * The function is called in getLowestPrice.
+     *
+     * @param scraperResult: the list of items that contains the results of scraping the websites.
+     * @return lowestPrice: the price of the item with the lowest price.
+     */
 
     private double countLowestPrice(List<Item> scraperResult) {
         double lowestPrice = 100000000.0;
@@ -381,9 +482,16 @@ public class Controller {
         return lowestPrice;
     }
 
+    /**
+     * This function will set LabelMin (denoting minimum price) to the price of the item
+     * with the lowest price if there is an available price to display. Otherwise, it will
+     * only place a "-" as text and it will not be clickable.
+     *
+     * @param lowestPrice: the price of the item with the lowest price
+     * @param scraperResult: the list of items that contains the results of scraping the websites.
+     */
+
     private void setLabelMin(double lowestPrice, List<Item> scraperResult) {
-        // if priceAvailable set hyperlink to page (getItemWithLowestPrice)
-        // else display "-"
         if (priceAvailable(scraperResult) || priceAvailableButZeros(scraperResult)) {
             labelMin.setText(String.format("%.2f", lowestPrice));
             showLowestPricedItemInBrowser(scraperResult);
@@ -391,6 +499,15 @@ public class Controller {
         else
             labelMin.setText("-");
     }
+
+
+    /**
+     * This function handles the event when labelMin (denoting minimum price) is clicked
+     * and redirects the user to the post of the item that contains the minimum price in the browser.
+     * The function is called in setLabelMin.
+     *
+     * @param scraperResult: the list of items that contains the results of scraping the websites.
+     */
 
     private void showLowestPricedItemInBrowser(List<Item> scraperResult) {
         labelMin.setOnAction(new EventHandler<ActionEvent>() {
@@ -407,13 +524,16 @@ public class Controller {
         });
     }
 
+    /**
+     * This function returns the URI of the item with the lowest price. If there are two items with
+     * the same lowest price, the function returns the first one. This function is called in
+     * showLowestPricedItemInBrowser.
+     *
+     * @param scraperResult: the list of items that contains the results of scraping the websites
+     * @return the URI of the item with the lowest price (as a String)
+     */
+
     String getLowestPriceURI(List<Item> scraperResult) {
-        /*
-         * Returns the first item with the lowest price
-         * if there are two items with the same lowest price,
-         * function returns the first one.
-         * if invalid result, return empty string
-         */
         double lowestPrice = getLowestPrice(scraperResult);
         String url = "";
         for (Item item : scraperResult) {
@@ -425,6 +545,13 @@ public class Controller {
         return url;
     }
 
+    /**
+     * This function will set the text of labelLatest (denoting latest post) in the GUI depending on
+     * whether or not there are items in scraperResult.
+     *
+     * @param scraperResult: the list of items that contains the results of scraping the websites.
+     */
+
     private void setLabelLatest(List<Item> scraperResult) {
         if (itemsFound(scraperResult)) {
             showLatestPostInBrowser(scraperResult);
@@ -433,12 +560,29 @@ public class Controller {
             labelLatest.setText("-");
     }
 
+    /**
+     * A helper function that checks whether or not there are items in the list of results (scraperResult)
+     * and returns a boolean result. The function is called in setLabelLatest, getLowestPrice, and getAvgPrice.
+     *
+     * @param scraperResult: the list of items that contains the results of scraping the websites.
+     * @return a boolean condition corresponding to whether or not scraperResult is empty or not.
+     */
+
     boolean itemsFound(List<Item> scraperResult) {
         if (getItemCount(scraperResult) == 0)
             return false;
         else
             return true;
     }
+
+    /**
+     * This function redirects the user to the page of the searched item that was last posted
+     * given the results from the Webscraper. The function is called when labelLatest (denoting
+     * latest post in the GUI is clicked. The function is called by setLabelLatest and is only called
+     * if there are items that are found in the scraperResult.
+     *
+     * @param scraperResult: the list of items that contains the results of scraping the websites
+     */
 
     private void showLatestPostInBrowser(List<Item> scraperResult) {
         labelLatest.setText("See latest post");
@@ -455,6 +599,15 @@ public class Controller {
             }
         });
     }
+
+    /**
+     * A helper function that returns the latest post's URI given the scraperResult. This function is
+     * called in showLatestPostInBrowser.
+     *
+     * @param scraperResult: the list of items that contains the results of scraping the websites
+     * @return latestPostURI: the URI of the item that was posted the latest in either of the websites
+     * that were scraped.
+     */
 
     private String getLatestPostURI(List<Item> scraperResult) {
         Date latestDate = scraperResult.get(0).getPostedDate();
