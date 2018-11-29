@@ -9,6 +9,7 @@ import com.gargoylesoftware.htmlunit.html.HtmlPage;
 import static org.junit.Assert.*;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.Vector;
@@ -45,44 +46,67 @@ public class WebScraperTest{
 		Class[] paramTypes = new Class[2];
 		paramTypes[0] = com.gargoylesoftware.htmlunit.html.HtmlElement.class;
 		paramTypes[1] = java.lang.String.class;
+		// method 0
 		methods.add(scraper.getClass().getDeclaredMethod("getTitle", paramTypes));
+		// method 1
 		methods.add(scraper.getClass().getDeclaredMethod("getPrice", paramTypes));
+		// method 2
 		methods.add(scraper.getClass().getDeclaredMethod("getUrl", paramTypes));
 		
 		paramTypes = new Class[1];
-		paramTypes[0] = java.util.ArrayList.class;
+		paramTypes[0] = ArrayList.class;
+		// method 3
 		methods.add(scraper.getClass().getDeclaredMethod("deploySpiders", paramTypes));
 		
 		paramTypes[0] = com.gargoylesoftware.htmlunit.html.HtmlElement.class;
+		// method 4
 		methods.add(scraper.getClass().getDeclaredMethod("getPostedDate", paramTypes));
 		
 		paramTypes[0] = com.gargoylesoftware.htmlunit.html.HtmlPage.class;
+		// method 5
 		methods.add(scraper.getClass().getDeclaredMethod("scrapePage", paramTypes));
 	
-		paramTypes[0] = java.lang.Double.class;
-		methods.add(scraper.getClass().getDeclaredMethod("roundUp", paramTypes));
-		
 		paramTypes = new Class[2];
 		paramTypes[0] = java.util.ArrayList.class;
 		paramTypes[1] = java.util.ArrayList.class;
+		// method 6
 		methods.add(scraper.getClass().getDeclaredMethod("sortResult",  paramTypes));
 		
 		paramTypes = new Class[1];
 		paramTypes[0] = java.lang.String.class;
+		// method 7
 		methods.add(spider.getClass().getDeclaredMethod("parseDate", paramTypes));
+	
+		paramTypes[0] = com.gargoylesoftware.htmlunit.html.HtmlPage.class;
+		// method 8
+		methods.add(scraper.getClass().getDeclaredMethod("getPageStatistics", paramTypes));
+		
+		paramTypes = new Class[3];
+		paramTypes[0] = ArrayList.class;
+		paramTypes[1] = java.lang.String.class;
+		paramTypes[2] = java.lang.String.class;
+		// method 9
+		methods.add(scraper.getClass().getDeclaredMethod("handlePagination", paramTypes));
 		
 		for (Method method : methods) 
 			method.setAccessible(true);
 		}
-
+	
 	@Test
-	public void roundingTest() throws Exception{
-		int upper = (int) methods.get(6).invoke(null, 2.7);
-		assertEquals(upper, 3);
+	public void craigsSpider() throws Exception{
 		
-		int lower = (int) methods.get(6).invoke(null,  2.034);
-		assertEquals(lower, 3);
 	}
+	
+	@Test
+	public void craigsStats() throws Exception{
+		HtmlPage craigsPage = craigsClient.getPage(dir_ + "/craigslist0.html");
+		ArrayList<Integer> stats = (ArrayList<Integer>) methods.get(8).invoke(null, craigsPage);
+		assertEquals(stats.size(), 2);
+		
+		craigsPage = craigsClient.getPage(dir_ + "/craigslist2.html");
+		stats = (ArrayList<Integer>) methods.get(8).invoke(null, craigsPage);
+		assertEquals(stats.size(), 2);
+	}	
 	
 	@Test
 	public void amazonTitle() throws Exception {
@@ -159,8 +183,8 @@ public class WebScraperTest{
 		
 		// normal use case
 		amazonItems = (ArrayList<Item>) methods.get(3).invoke(scraper, amazonItems);
-		Date date0 = (Date) methods.get(8).invoke(null,  "April 17, 2014");
-		Date date1 = (Date) methods.get(8).invoke(null,  "November 21, 2015");
+		Date date0 = (Date) methods.get(7).invoke(null,  "April 17, 2014");
+		Date date1 = (Date) methods.get(7).invoke(null,  "November 21, 2015");
 		assertEquals(amazonItems.get(0).getPostedDate(), date0);
 		assertEquals(amazonItems.get(1).getPostedDate(), date1);
 		
@@ -169,7 +193,7 @@ public class WebScraperTest{
 		amazonItems.add(new Item("temp", 0.0, "temp", AMAZON, null));
 		
 		amazonItems = (ArrayList<Item>) methods.get(3).invoke(scraper, amazonItems);
-		Date date2 = (Date) methods.get(8).invoke(null,  "October 1, 2015");
+		Date date2 = (Date) methods.get(7).invoke(null,  "October 1, 2015");
 		// test 3 different cases / html layout
 		assertEquals(amazonItems.get(2).getPostedDate(), date2);
 		assertNull(amazonItems.get(3).getPostedDate());
@@ -233,42 +257,30 @@ public class WebScraperTest{
 		ArrayList<Item> craigsAL = (ArrayList<Item>) methods.get(5).invoke(null, craigsPage);
 		assertEquals(craigsAL.size(), 120);
 	}
-
-	/*
-	@Test
-	public void craigsPagination() throws Exception{
-		HtmlPage craigsPage = craigsClient.getPage(dir_ + "/craigslistEmpty.html");
-		WebScraper scraper = new WebScraper();
-		Controller controller = new Controller();
-		
-		ArrayList<Item> craigsItems = scraper.handlePagination(craigsPage, controller);
-		assertEquals(craigsItems.size(), 0);
-	}
-	*/
 	
 	@Test
 	public void resultSorting() throws Exception{
 		ArrayList<Item> amazonItems = new ArrayList<Item>();
 		ArrayList<Item> craigsItems = new ArrayList<Item>();		
 		// both arrayLists empty
-		Vector<Item> ret = (Vector<Item>) methods.get(7).invoke(scraper, amazonItems, craigsItems);
+		Vector<Item> ret = (Vector<Item>) methods.get(6).invoke(null, amazonItems, craigsItems);
 		assertEquals(ret, new Vector<Item>());
 		
 		// empty craigsArrayList --> none of the arraylist items were removed
 		Item addItem = new Item("temp", 0.0, "temp", AMAZON, null);
 		amazonItems.add(addItem);
-		ret = (Vector<Item>) methods.get(7).invoke(scraper, amazonItems, craigsItems);
+		ret = (Vector<Item>) methods.get(6).invoke(null, amazonItems, craigsItems);
 		assertEquals(ret.size(), 1);
 		
 		// size craigslist > size amazonlist --> items in the arraylist were removed
 		craigsItems.add(addItem);
 		craigsItems.add(new Item("temp", 10.0, "temp", DEFAULT, null));
-		ret = (Vector<Item>) methods.get(7).invoke(scraper,  amazonItems, craigsItems);
+		ret = (Vector<Item>) methods.get(6).invoke(null, amazonItems, craigsItems);
 		assertEquals(ret.size(), 3);
 		
 		// empty amazonArrayList --> none of the arraylist items were removed
 		craigsItems.add(addItem);
-		ret = (Vector<Item>) methods.get(7).invoke(scraper,  amazonItems, craigsItems);
+		ret = (Vector<Item>) methods.get(6).invoke(null, amazonItems, craigsItems);
 		assertEquals(ret.size(), 1);
 		
 		// craigslist more item with different price --> items in the arraylist were removed
@@ -276,13 +288,13 @@ public class WebScraperTest{
 			amazonItems.add(new Item("temp"+i, Math.sqrt(new Double(i)), "temp", AMAZON, null));
 			craigsItems.add(new Item("temp"+i+i, new Double(Math.pow(i, 3)), "temp", DEFAULT, null));
 		}
-		ret = (Vector<Item>) methods.get(7).invoke(scraper,  amazonItems, craigsItems);
+		ret = (Vector<Item>) methods.get(6).invoke(null, amazonItems, craigsItems);
 		assertEquals(ret.size(), 5);
 		
 		// craigslist price < amazon's --> items in the arraylist were removed
 		craigsItems.add(addItem);
 		amazonItems.add(new Item("temp", 1000.0, "temp", AMAZON, null));
-		ret = (Vector<Item>) methods.get(7).invoke(scraper,  amazonItems, craigsItems);
+		ret = (Vector<Item>) methods.get(6).invoke(null, amazonItems, craigsItems);
 		assertEquals(ret.size(), 2);
 		
 		//TODO: generate same double price for 100% branch coverage

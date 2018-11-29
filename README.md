@@ -20,6 +20,7 @@
 8. Posted date from *amazon* portal is scraped from the date of which the item is posted for the first time
 9. Service listing on *amazon* portal (not an item) is handled as well
 10. If there are results found but prices are all 0, average selling price and lowest selling price will be displayed as 0.0 as opposed to "-". "-" will only be displayed if there are no results found
+11. Functions that do not have access modifiers are purposely made package-private for unit testing purposes.
 
 
 ---
@@ -63,6 +64,8 @@ If you want to just rerun the project without rebuilding it,
 - Double click jar file (e.g. `webscraper-0.1.0.jar`) or simply `./gradlew run`
 
 #### Unit test and jacoco coverage report
+
+[Here](https://nwihardjo.github.io/Java-Webscrapper/) for the latest unit testing and branch coverage.
 
 - Go to the project root directory
 - `./gradlew test jacocoTestReport` to generate the test report anc coverage. It will run all unit tests and generate the coverage report 
