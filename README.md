@@ -20,6 +20,7 @@
 8. Posted date from *amazon* portal is scraped from the date of which the item is posted for the first time
 9. Service listing on *amazon* portal (not an item) is handled as well
 10. If there are results found but prices are all 0, average selling price and lowest selling price will be displayed as 0.0 as opposed to "-". "-" will only be displayed if there are no results found
+11. Functions that do not have access modifiers are purposely made package-private for unit testing purposes.
 
 
 ---
