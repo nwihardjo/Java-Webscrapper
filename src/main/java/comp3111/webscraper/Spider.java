@@ -56,7 +56,7 @@ public class Spider implements Callable<Date> {
 	}
 
 	/**
-	 * Method to scrape the date of the a service posting (i.e. amazon home & business services)
+	 * Method to scrape the date of the a service posting (i.e. amazon home and business services)
 	 * 	, not an item. Service posting has different web layout, html structures, and css styles 
 	 * 	which require different XPath address. This method utilises the parseDate method to return the 
 	 * 	date in a desired format

@@ -35,14 +35,13 @@ import javafx.application.Platform;
 
 /**
  * 
+ * Controller class that manages GUI interaction. 
+ * Please see document about JavaFX for details.
+ * It handles the filling of data obtained from the scraper into GUI components such as console, summary and table tab for this project.
  * @author kevinw
  * @author hanifdean
  * @author nwihardjo
  * @author albertparedandan
- *
- *
- * Controller class that manage GUI interaction. Please see document about JavaFX for details.
- * 
  */
 public class Controller {
 
@@ -102,14 +101,17 @@ public class Controller {
     private String lastOutput = "";
 
     /**
-     * Default controller
+     * 
+     * Default controller which instantiates the Controller and webscraper
      */
     public Controller() {
         scraper = new WebScraper();
     }
 
     /**
-     * Default initializer. It is empty.
+     * 
+     * Default initializer initialises the state of the webscraper to its starting state.
+     * The 'refine search bar', 'refine' button and 'Last Search' menu option is disabled. 
      */
     @FXML
     private void initialize() {
@@ -117,6 +119,13 @@ public class Controller {
         refineButton.setDisable(true);
         lastSearchMenuItem.setDisable(true);
     }
+
+    /**
+     * 
+     * Method that is called when 'About Your Team' menu option is clicked. 
+     * JOptionPane is used to display a new window showing the details about the team for this project.
+     *
+     */
 
     @FXML
     private void aboutYourTeam() {
@@ -132,10 +141,20 @@ public class Controller {
             "   GitHub: nwihardjo", "About Your Team", JOptionPane.PLAIN_MESSAGE);
     }
 
+    /**
+     * Method that is called when the 'Quit' button is clicked. 
+     * It exits the program and closes all connections.
+     */
+
     @FXML
     private void quit() {
         System.exit(0);
     }
+    
+    /**
+     * Method that is called when the 'Close' button is clicked. 
+     * It initialises the webscraper to its initial state where the Console, Summary and Table tab is empty.
+     */
 
     @FXML
     private void close() {
@@ -148,8 +167,12 @@ public class Controller {
         labelLatest.setText("<Latest>");
         itemTable.getItems().clear();
     }
+    
     /**
-     * Called when the new button is pressed. Very dummy action - print something in the command prompt.
+     * Method that is called when the 'Last Search' button is pressed.
+     * It checks if lastResult is empty, then it does nothing.
+     * However, when lastResult has a value, it will clear the 'Console' tab, and replace the 'Console', 'Summary' and 'Table' tab with the previous search result data.
+     * 
      */
     @FXML
     private void lastSearch() {
@@ -167,14 +190,11 @@ public class Controller {
         }
     }
 
-    @FXML
-    private void displaySummary(Event event) {
-        //System.out.println("Summary tab selected");
-    }
-
 
     /**
-     * Called when the search button is pressed.
+     * Called when the search button is pressed. 
+     * Instantiates threads to perform search functionalities and is called when the search button is pressed.
+     * This enables the search to run faster given that the the webscraper parallelizes its operations
      */
     @FXML
     void actionSearch() {
@@ -184,7 +204,27 @@ public class Controller {
     	thread.start();
     }
     // TODO: refactor function above and try testing after initializing scraperresult to 0
-
+    
+    
+    /**
+     * Method called by actionSearch.
+     * Clears the output console area.
+     * Calls the webscrapers to scrape Amazon and New York Craiglist using the keyword obtained.
+     * Assigns the results obtained by the webscraper into lastOutput and lastResult for backup.
+     * Assigns the results obtained by the webscraper into scraperResult for further use.
+     * Calls the printOutputToConsole method to produce output accordingly to console.
+     * Updates the 'Summary' and 'Table' tab by calling the refreshSummaryTab and refreshTableTab methods.
+     * Also enables the Refine Search feature by enabling the 'Refine Search' input box and button and the 'Last Search' button.
+     * 
+     * @see actionSearch
+     * lastOutput
+     * lastResult
+     * scraperResult
+     * printOutputToConsole
+     * refreshSummaryTab
+     * refreshTableTab
+     * 
+     */
     void performSearchFunctionalities() {
         textAreaConsole.clear();
         System.out.println("actionSearch: " + textFieldKeyword.getText());
@@ -199,6 +239,20 @@ public class Controller {
         lastSearchMenuItem.setDisable(false);
     }
 
+    /**
+     * Method that is called everytime a new search/refine is being made to refresh and fill the Table data correctly.
+     * Table data is sorted when the Column tab is clicked.
+     * Also enables URL in Table Tab to be clicked and redirects to webpage using device's local browser.
+     * This is done by changing TableView mode 'CellSelection'. If the the selected cell is a URL cell, get the value and redirect to browser.
+     * 
+     * 
+     * @param dummy a List of Items returned from the webscraper
+     * 
+     * @see TableView
+     * List
+     * Item
+     */
+    
     private void refreshTableTab(List<Item> dummy) {
         List<Item> tempResult = dummy;
     
@@ -237,10 +291,15 @@ public class Controller {
         });
     }
 
-    // enable asynchronous printing on console tab
+    /**
+     * Method that takes a string input and outputs it to the 'Console' tab in the application.
+     * 
+     * @param message a string message to be shown in the 'Console' tab
+     */
     void printConsole (String message) {
         textAreaConsole.appendText(message);
     }
+   
 
     @FXML
     void refineSearch() {

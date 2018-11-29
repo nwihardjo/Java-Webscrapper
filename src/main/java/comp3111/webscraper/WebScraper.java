@@ -37,7 +37,6 @@ public class WebScraper {
 	/**
 	 * Default Constructor, instantiated webClient of the HtmlUnit and configured for javascript renderring
 	 * 
-	 * @return WebScraper instance
 	 * @see WebScraper 
 	 */
 	public WebScraper() {
