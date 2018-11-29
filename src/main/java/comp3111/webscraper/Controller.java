@@ -376,7 +376,8 @@ public class Controller {
      * @return the average price as a double.
      */
     double getAvgPrice(List<Item> scraperResult) {
-        if (itemsFound(scraperResult))
+        boolean itemsFound = (getItemCount(scraperResult) != 0);
+        if (itemsFound)
             return countAvgPrice(scraperResult);
         else
             return 0.0;
@@ -454,7 +455,8 @@ public class Controller {
      */
 
     double getLowestPrice(List<Item> scraperResult) {
-        if (itemsFound(scraperResult))
+        boolean itemsFound = (getItemCount(scraperResult) != 0);
+        if (itemsFound)
             return countLowestPrice(scraperResult);
         else
             return 0.0;
