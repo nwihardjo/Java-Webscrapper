@@ -87,6 +87,11 @@ public class WebScraperTest{
 		paramTypes[2] = java.lang.String.class;
 		// method 9
 		methods.add(scraper.getClass().getDeclaredMethod("handlePagination", paramTypes));
+
+		paramTypes = new Class[1];
+		paramTypes[0] = java.lang.String.class;
+		// method 10
+		methods.add(spider.getClass().getDeclaredMethod("parseDate", paramTypes));
 		
 		for (Method method : methods) 
 			method.setAccessible(true);
@@ -94,7 +99,15 @@ public class WebScraperTest{
 	
 	@Test
 	public void craigsSpider() throws Exception{
+		HtmlPage craigsPage = craigsClient.getPage(dir_ + "/craigslist2.html");
+		ArrayList<Integer> stats = (ArrayList<Integer>) methods.get(8).invoke(null,  craigsPage);
+		ArrayList<Item> craigsItem = (ArrayList<Item>) methods.get(9).invoke(scraper, stats, "temp", dir_ + "/craigslist2.html");
+		assertNotNull(craigsItem);
 		
+		craigsItem = (ArrayList<Item>) methods.get(9).invoke(scraper,  stats, "temp", dir_+ "/craigslistasdf.html");
+		assertEquals(craigsItem.size(), 0);
+		
+		assertNull((Date) methods.get(10).invoke(spider,  "temp"));
 	}
 	
 	@Test
