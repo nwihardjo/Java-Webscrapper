@@ -65,8 +65,6 @@ If you want to just rerun the project without rebuilding it,
 
 #### Unit test and jacoco coverage report
 
-[Here](https://nwihardjo.github.io/Java-Webscrapper/) for the latest unit testing and branch coverage.
-
 - Go to the project root directory
 - `./gradlew test jacocoTestReport` to generate the test report anc coverage. It will run all unit tests and generate the coverage report 
 
@@ -76,6 +74,8 @@ If you want to just rerun the project without rebuilding it,
 Some of the unit tests use cached pages from both portals. Testing utilises Reflection method to unit test private functions (not a good practise i know).
 
 #### Documentation / javadoc
+
+[Here](https://nwihardjo.github.io/Java-Webscrapper/) for the latest javadoc. Or if you prefer compile it by yourself,
 
 - In project root directory, `./gradlew javadoc` to generate javadoc
 - Documentation is available at `./build/docs/javadoc/index.html`.
