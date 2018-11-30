@@ -21,6 +21,8 @@
 9. Service listing on *amazon* portal (not an item) is handled as well
 10. If there are results found but prices are all 0, average selling price and lowest selling price will be displayed as 0.0 as opposed to "-". "-" will only be displayed if there are no results found
 11. Functions that do not have access modifiers are purposely made package-private for unit testing purposes.
+12. As scraping *craigslist* is handled concurrently, the output of the console will only be ``` [int] page(s) of craigslist are being scraped in parallel ... ``` instead of how many pages has been scraped so far, as multiple pages are scraped at the same time / in parallel.
+
 
 
 ---
